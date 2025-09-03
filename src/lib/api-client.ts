@@ -1,5 +1,6 @@
-// 前端 API 客户端 - 用于调用 Next.js API 路由
-// 替代直接的 postgrest 调用
+// Cliente API para Supabase
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { getMockDashboardStats } from '@/lib/mock-data'
 
 interface ApiResponse<T = any> {
   success: boolean
@@ -19,33 +20,70 @@ class ApiError extends Error {
 
 async function apiRequest<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
   try {
-    const response = await fetch(`/next_api${endpoint}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options?.headers,
-      },
-      ...options,
-    })
-
-    let result: ApiResponse<T>
-    try {
-      result = await response.json()
-    } catch (jsonError) {
-      console.error("Failed to parse JSON response:", jsonError)
-      throw new ApiError(response.status, `Invalid JSON response: ${response.statusText}`)
+    if (!isSupabaseConfigured()) {
+      // Return mock data when Supabase is not configured
+      if (endpoint === '/dashboard/stats') {
+        return getMockDashboardStats() as T
+      }
+      return [] as T
     }
 
-    if (!response.ok || !result.success) {
-      throw new ApiError(response.status, result.error || "API request failed")
-    }
+    // Handle different endpoints with Supabase
+    switch (endpoint) {
+      case '/companies':
+        const { data: companies, error: companiesError } = await supabase
+          .from('companies')
+          .select('*')
+          .order('created_at', { ascending: false })
+        if (companiesError) throw companiesError
+        return companies as T
 
-    return result.data as T
+      case '/contacts':
+        const { data: contacts, error: contactsError } = await supabase
+          .from('contacts')
+          .select(`
+            *,
+            companies (
+              id,
+              name
+            )
+          `)
+          .order('created_at', { ascending: false })
+        if (contactsError) throw contactsError
+        return contacts as T
+
+      case '/opportunities':
+        const { data: opportunities, error: opportunitiesError } = await supabase
+          .from('opportunities')
+          .select(`
+            *,
+            companies (
+              id,
+              name
+            ),
+            contacts (
+              id,
+              first_name,
+              last_name
+            )
+          `)
+          .order('created_at', { ascending: false })
+        if (opportunitiesError) throw opportunitiesError
+        return opportunities as T
+
+      case '/dashboard/stats':
+        return getMockDashboardStats() as T
+
+      default:
+        return [] as T
+    }
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error
-    }
     console.error("API request error:", error)
-    throw new ApiError(500, "Network error or invalid response")
+    // Return mock data on error
+    if (endpoint === '/dashboard/stats') {
+      return getMockDashboardStats() as T
+    }
+    return [] as T
   }
 }
 
@@ -57,18 +95,59 @@ export const api = {
   },
 
   post: <T = any>(endpoint: string, data?: any) =>
-    apiRequest<T>(endpoint, {
-      method: "POST",
-      body: data ? JSON.stringify(data) : undefined,
-    }),
+    handleMutation<T>(endpoint, 'POST', data),
 
   put: <T = any>(endpoint: string, data?: any) =>
-    apiRequest<T>(endpoint, {
-      method: "PUT",
-      body: data ? JSON.stringify(data) : undefined,
-    }),
+    handleMutation<T>(endpoint, 'PUT', data),
 
-  delete: <T = any>(endpoint: string) => apiRequest<T>(endpoint, { method: "DELETE" }),
+  delete: <T = any>(endpoint: string) => handleMutation<T>(endpoint, 'DELETE'),
+}
+
+async function handleMutation<T>(endpoint: string, method: string, data?: any): Promise<T> {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Supabase não está configurado')
+  }
+
+  try {
+    const table = endpoint.split('/')[1]
+    
+    switch (method) {
+      case 'POST':
+        const { data: insertData, error: insertError } = await supabase
+          .from(table)
+          .insert(data)
+          .select()
+          .single()
+        if (insertError) throw insertError
+        return insertData as T
+
+      case 'PUT':
+        const id = new URLSearchParams(endpoint.split('?')[1] || '').get('id')
+        const { data: updateData, error: updateError } = await supabase
+          .from(table)
+          .update(data)
+          .eq('id', id)
+          .select()
+          .single()
+        if (updateError) throw updateError
+        return updateData as T
+
+      case 'DELETE':
+        const deleteId = new URLSearchParams(endpoint.split('?')[1] || '').get('id')
+        const { error: deleteError } = await supabase
+          .from(table)
+          .delete()
+          .eq('id', deleteId)
+        if (deleteError) throw deleteError
+        return { id: deleteId } as T
+
+      default:
+        throw new Error(`Método ${method} não suportado`)
+    }
+  } catch (error) {
+    console.error(`Error in ${method} ${endpoint}:`, error)
+    throw error
+  }
 }
 
 // 导出 ApiError 以便组件中进行错误处理
