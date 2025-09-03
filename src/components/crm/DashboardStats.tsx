@@ -6,6 +6,7 @@ import { Building2, Users, Target, TrendingUp, CheckCircle, XCircle, Calendar } 
 import { KwanzaCurrencyDisplay } from "@/components/angola/KwanzaCurrencyDisplay"
 import { useTranslation } from "@/lib/angola-translations"
 import { getMockDashboardStats } from "@/lib/mock-data"
+import { mockContacts, mockOpportunities, mockActivities } from "@/data/mock-data"
 
 export function DashboardStats() {
   const { t } = useTranslation()
