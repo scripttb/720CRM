@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { NotificationProvider } from '@/contexts/NotificationContext'
 import { Toaster } from '@/components/ui/sonner'
 import App from './App'
 import './index.css'
@@ -17,8 +18,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         disableTransitionOnChange
       >
         <AuthProvider>
-          <App />
-          <Toaster />
+          <NotificationProvider>
+            <App />
+            <Toaster />
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

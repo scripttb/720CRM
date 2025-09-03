@@ -27,8 +27,10 @@ import { CreditNoteDialog } from './CreditNoteDialog';
 import { PaymentReceiptDialog } from './PaymentReceiptDialog';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { useBilling } from '@/hooks/use-billing';
+import { useIsMobile } from '@/components/ui/use-mobile';
 
 export function BillingDashboard() {
+  const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState('proformas');
   const [proformaDialogOpen, setProformaDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
@@ -171,54 +173,81 @@ export function BillingDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <div className="flex items-center justify-between">
-          <TabsList className="grid w-full max-w-md grid-cols-4">
+        <div className={cn(
+          "flex items-center justify-between",
+          isMobile ? "flex-col gap-4" : ""
+        )}>
+          <TabsList className={cn(
+            "grid grid-cols-4",
+            isMobile ? "w-full" : "w-full max-w-md"
+          )}>
             <TabsTrigger value="proformas" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Proformas
+              {isMobile ? "PF" : "Proformas"}
               <Badge variant="secondary" className="ml-1">
                 {stats.proformasCount}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="invoices" className="flex items-center gap-2">
               <Receipt className="h-4 w-4" />
-              Faturas
+              {isMobile ? "FT" : "Faturas"}
               <Badge variant="secondary" className="ml-1">
                 {stats.invoicesCount}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="credit-notes" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              N. Crédito
+              {isMobile ? "NC" : "N. Crédito"}
               <Badge variant="secondary" className="ml-1">
                 {stats.creditNotesCount}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="receipts" className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
-              Recibos
+              {isMobile ? "RG" : "Recibos"}
               <Badge variant="secondary" className="ml-1">
                 {stats.receiptsCount}
               </Badge>
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex items-center gap-2">
-            <Button onClick={() => handleQuickAction('proforma')}>
+          <div className={cn(
+            "flex items-center gap-2",
+            isMobile ? "w-full flex-wrap" : ""
+          )}>
+            <Button 
+              onClick={() => handleQuickAction('proforma')}
+              size={isMobile ? "sm" : "default"}
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Nova Proforma
+              {isMobile ? "PF" : "Nova Proforma"}
             </Button>
-            <Button onClick={() => handleQuickAction('invoice')}>
+            <Button 
+              onClick={() => handleQuickAction('invoice')}
+              size={isMobile ? "sm" : "default"}
+            >
               <Plus className="mr-2 h-4 w-4" />
-              Nova Fatura
+              {isMobile ? "FT" : "Nova Fatura"}
             </Button>
             <SafTExport />
-            <Button variant="outline">
+            {!isMobile && (
+              <Button variant="outline">
+                <Download className="mr-2 h-4 w-4" />
+                Relatórios
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Quick Actions */}
+        {isMobile && (
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            <Button variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
               Relatórios
             </Button>
           </div>
-        </div>
+        )}
 
         <TabsContent value="proformas" className="space-y-6">
           <div className="flex items-center justify-between">

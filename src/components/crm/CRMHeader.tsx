@@ -14,6 +14,7 @@ import {
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationCenter } from '@/components/crm/notifications/NotificationCenter';
 import { Search, Settings, LogOut, User } from 'lucide-react';
+import { useIsMobile } from '@/components/ui/use-mobile';
 
 interface CRMHeaderProps {
   className?: string;
@@ -22,6 +23,7 @@ interface CRMHeaderProps {
 export function CRMHeader({ className }: CRMHeaderProps) {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const isMobile = useIsMobile();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,11 +38,14 @@ export function CRMHeader({ className }: CRMHeaderProps) {
   return (
     <header className={`flex h-16 items-center justify-between border-b bg-background px-6 ${className}`}>
       {/* Search */}
-      <div className="flex items-center gap-4 flex-1 max-w-md">
+      <div className={cn(
+        "flex items-center gap-4 flex-1",
+        isMobile ? "max-w-[200px]" : "max-w-md"
+      )}>
         <form onSubmit={handleSearch} className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Pesquisar empresas, contactos, oportunidades..."
+            placeholder={isMobile ? "Pesquisar..." : "Pesquisar empresas, contactos, oportunidades..."}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -49,12 +54,15 @@ export function CRMHeader({ className }: CRMHeaderProps) {
       </div>
 
       {/* Right side actions */}
-      <div className="flex items-center gap-4">
+      <div className={cn(
+        "flex items-center",
+        isMobile ? "gap-2" : "gap-4"
+      )}>
         {/* Notifications */}
         <NotificationCenter />
 
-        {/* Theme Toggle */}
-        <ThemeToggle />
+        {/* Theme Toggle - Hide on mobile */}
+        {!isMobile && <ThemeToggle />}
 
         {/* User Menu */}
         <DropdownMenu>
