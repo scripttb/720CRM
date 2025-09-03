@@ -1,7 +1,6 @@
 // Cliente API para Supabase
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { getMockDashboardStats } from '@/lib/mock-data'
-import { mockCompanies, mockContacts, mockOpportunities, mockActivities, mockUsers } from '../data/mock-data';
+import { getMockDashboardStats, mockCompanies, mockContacts, mockOpportunities, mockActivities, mockUsers } from '@/lib/mock-data'
 
 interface ApiResponse<T = any> {
   success: boolean

@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { supabase, isSupabaseConfigured } from "@/lib/supabase"
 import type { DashboardStats as StatsType } from "@/types/crm"
 import { Building2, Users, Target, TrendingUp, CheckCircle, XCircle, Calendar } from "lucide-react"
 import { KwanzaCurrencyDisplay } from "@/components/angola/KwanzaCurrencyDisplay"
 import { useTranslation } from "@/lib/angola-translations"
 import { getMockDashboardStats } from "@/lib/mock-data"
-import { mockContacts, mockOpportunities, mockActivities } from "@/data/mock-data"
 
 export function DashboardStats() {
   const { t } = useTranslation()
@@ -17,66 +15,13 @@ export function DashboardStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Usar dados mock diretamente para evitar erros de tabelas não encontradas
-        const contactsData = mockContacts;
-        const opportunitiesData = mockOpportunities.map(opp => ({ 
-          value: opp.value || 0, 
-          status: opp.status 
-        }));
-        const activitiesData = mockActivities.filter(activity => 
-          new Date(activity.create_time) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        );
-        const [
-          { count: totalCompanies },
-          { count: totalContacts },
-          { count: totalOpportunities },
-          { data: opportunities },
-        ] = await Promise.all([
-          supabase.from("companies").select("*", { count: "exact", head: true }),
-          supabase.from("contacts").select("*", { count: "exact", head: true }),
-          supabase.from("opportunities").select("*", { count: "exact", head: true }),
-          supabase.from("opportunities").select("value, status"),
-        ])
-
-        const totalRevenue =
-          opportunities?.reduce((sum, opp) => (opp.status === "won" ? sum + (opp.value || 0) : sum), 0) || 0
-
-        const wonOpportunities = opportunities?.filter((opp) => opp.status === "won").length || 0
-        const lostOpportunities = opportunities?.filter((opp) => opp.status === "lost").length || 0
-        const openOpportunities = opportunities?.filter((opp) => opp.status !== "won" && opp.status !== "lost").length || 0
-
-        const conversionRate = totalOpportunities ? (wonOpportunities / totalOpportunities) * 100 : 0
-        const averageDealSize = wonOpportunities ? totalRevenue / wonOpportunities : 0
-
-        // Get activities from this week
-        const oneWeekAgo = new Date()
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
-
-        const { count: activitiesThisWeek } = await supabase
-          .from("activities")
-          .select("*", { count: "exact", head: true })
-          .gte("created_at", oneWeekAgo.toISOString())
-
-        const data: StatsType = {
-          totalCompanies: totalCompanies || 0,
-          totalContacts: totalContacts || 0,
-          totalOpportunities: totalOpportunities || 0,
-          totalRevenue,
-          openOpportunities,
-          wonOpportunities,
-          lostOpportunities,
-          activitiesThisWeek: activitiesThisWeek || 0,
-          conversionRate,
-          averageDealSize,
-        }
-
-        console.log("[v0] Dashboard stats fetched successfully:", data)
-        setStats(data)
+        // Use mock data directly to avoid database errors
+        const data = getMockDashboardStats();
+        setStats(data);
         setError(null)
       } catch (error) {
-        console.error("[v0] Failed to fetch dashboard stats:", error)
-        console.log("[v0] Using mock data as fallback")
-        setStats(getMockDashboardStats())
+        console.error("Failed to fetch dashboard stats:", error)
+        setStats(getMockDashboardStats());
         setError(null)
       } finally {
         setLoading(false)
@@ -84,19 +29,6 @@ export function DashboardStats() {
     }
 
     fetchStats()
-  }, [])
-
-  useEffect(() => {
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error("[v0] Caught unhandled promise rejection:", event.reason)
-      event.preventDefault() // Prevent the default browser behavior
-    }
-
-    window.addEventListener("unhandledrejection", handleUnhandledRejection)
-
-    return () => {
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection)
-    }
   }, [])
 
   if (loading) {

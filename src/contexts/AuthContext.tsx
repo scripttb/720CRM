@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { User } from '@/types/crm';
+import { mockUsers } from '@/lib/mock-data';
 
 interface AuthContextType {
   user: User | null;
@@ -30,19 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      // Try mock authentication first (since database might not be set up)
-      const mockUser = mockUsers.find(u => u.email === email && u.password === password);
-      if (mockUser) {
-        const user: User = {
-          id: mockUser.id,
-          email: mockUser.email,
-          firstName: mockUser.firstName,
-          lastName: mockUser.lastName,
-          role: mockUser.role,
-          avatar: mockUser.avatar
-        };
-        setUser(user);
-        localStorage.setItem('crm_user', JSON.stringify(user));
+      // Try mock authentication first
+      if (mockLogin(email, password)) {
         return true;
       }
 
@@ -127,66 +117,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const mockLogin = (email: string, password: string): boolean => {
-    // Mock users for demonstration
-    const mockUsers = [
+    // Mock credentials for demonstration
+    const mockCredentials = [
       {
         email: 'demo@crm.com',
         password: 'password',
-        user: {
-          id: 1,
-          email: 'demo@crm.com',
-          first_name: 'António',
-          last_name: 'Silva',
-          role: 'sales_manager' as const,
-          phone: '+244-923-123-456',
-          avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-          is_active: true,
-          last_login: new Date().toISOString(),
-          create_time: new Date().toISOString(),
-          modify_time: new Date().toISOString(),
-        }
+        userId: 1
       },
       {
         email: 'admin@crm.com',
         password: 'password',
-        user: {
-          id: 2,
-          email: 'admin@crm.com',
-          first_name: 'Maria',
-          last_name: 'Santos',
-          role: 'admin' as const,
-          phone: '+244-923-456-789',
-          avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-          is_active: true,
-          last_login: new Date().toISOString(),
-          create_time: new Date().toISOString(),
-          modify_time: new Date().toISOString(),
-        }
+        userId: 2
       },
       {
         email: 'vendedor@crm.com',
         password: 'password',
-        user: {
-          id: 3,
-          email: 'vendedor@crm.com',
-          first_name: 'João',
-          last_name: 'Pereira',
-          role: 'sales_rep' as const,
-          phone: '+244-923-789-123',
-          avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-          is_active: true,
-          last_login: new Date().toISOString(),
-          create_time: new Date().toISOString(),
-          modify_time: new Date().toISOString(),
-        }
+        userId: 3
       }
     ];
 
-    const mockUser = mockUsers.find(u => u.email === email && u.password === password);
+    const mockCredential = mockCredentials.find(u => u.email === email && u.password === password);
     
-    if (mockUser) {
-      setUser(mockUser.user);
-      localStorage.setItem('crm_user', JSON.stringify(mockUser.user));
+    if (mockCredential) {
+      const user = mockUsers.find(u => u.id === mockCredential.userId);
+      if (user) {
+        setUser(user);
+        localStorage.setItem('crm_user', JSON.stringify(user));
+      }
       return true;
     }
     
@@ -194,9 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    if (isSupabaseConfigured()) {
-      supabase.auth.signOut();
-    }
+    supabase.auth.signOut();
     setUser(null);
     localStorage.removeItem('crm_user');
   };
