@@ -1,7 +1,7 @@
 // Cliente API para Supabase
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { getMockDashboardStats } from '@/lib/mock-data'
-import { mockData } from '../data/mock-data';
+import { mockCompanies, mockContacts, mockOpportunities, mockActivities, mockUsers } from '../data/mock-data';
 
 interface ApiResponse<T = any> {
   success: boolean
@@ -93,15 +93,15 @@ async function apiRequest<T = any>(endpoint: string, options?: RequestInit): Pro
 function getMockData(endpoint: string): any {
   switch (true) {
     case endpoint.includes('companies'):
-      return mockData.companies;
+      return mockCompanies;
     case endpoint.includes('contacts'):
-      return mockData.contacts;
+      return mockContacts;
     case endpoint.includes('opportunities'):
-      return mockData.opportunities;
+      return mockOpportunities;
     case endpoint.includes('activities'):
-      return mockData.activities;
+      return mockActivities;
     case endpoint.includes('users'):
-      return mockData.users;
+      return mockUsers;
     default:
       return [];
   }
