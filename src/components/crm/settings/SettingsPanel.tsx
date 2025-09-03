@@ -37,31 +37,31 @@ export function SettingsPanel() {
   ])
 
   const handleSaveSettings = async (section: string) => {
-    console.log("[v0] Starting to save settings for section:", section)
     setLoading(true)
     try {
       // Simulate API call
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          try {
-            resolve(undefined)
-          } catch (error) {
-            reject(error)
-          }
-        }, 1000)
-      }).catch((error) => {
-        console.error("[v0] Promise rejection in handleSaveSettings:", error)
-        throw error
-      })
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-      console.log("[v0] Settings saved successfully for section:", section)
+      // Save to localStorage for persistence
+      const settings = {
+        companyName,
+        companyEmail,
+        companyPhone,
+        timezone,
+        currency,
+        emailNotifications,
+        pushNotifications,
+        weeklyReports,
+        dealAlerts
+      };
+      localStorage.setItem('crm_settings', JSON.stringify(settings));
+
       toast.success(`Configurações de ${section} guardadas com sucesso`)
     } catch (error) {
-      console.error("[v0] Error saving settings:", error)
       toast.error("Falha ao guardar configurações")
+      console.error('Error saving settings:', error)
     } finally {
       setLoading(false)
-      console.log("[v0] Finished saving settings for section:", section)
     }
   }
 

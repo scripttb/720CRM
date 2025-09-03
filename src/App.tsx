@@ -34,16 +34,11 @@ function App() {
       <Route path="/dashboard" element={user ? <DashboardLayout /> : <Navigate to="/login" replace />}>
         <Route index element={<DashboardPage />} />
         <Route path="companies" element={<CompaniesPage />} />
-        <Route path="companies/new" element={<CompaniesPage />} />
         <Route path="contacts" element={<ContactsPage />} />
-        <Route path="contacts/new" element={<ContactsPage />} />
         <Route path="opportunities" element={<OpportunitiesPage />} />
-        <Route path="opportunities/new" element={<OpportunitiesPage />} />
         <Route path="activities" element={<ActivitiesPage />} />
-        <Route path="activities/new" element={<ActivitiesPage />} />
         <Route path="communications" element={<CommunicationsPage />} />
         <Route path="billing" element={<BillingPage />} />
-        <Route path="billing/invoices/new" element={<BillingPage />} />
         <Route path="documents" element={<DocumentsPage />} />
         <Route path="reports" element={<ReportsPage />} />
         <Route path="settings" element={<SettingsPage />} />

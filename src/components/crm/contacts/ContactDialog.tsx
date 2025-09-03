@@ -315,6 +315,9 @@ export function ContactDialog({
                   onChange={(e) => handleInputChange('bi_number', e.target.value)}
                   placeholder="123456789AB123"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Formato: 9 dígitos + 2 letras + 3 dígitos
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nif">NIF</Label>
@@ -324,6 +327,9 @@ export function ContactDialog({
                   onChange={(e) => handleInputChange('nif', e.target.value)}
                   placeholder="123456789"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Número de Identificação Fiscal (9 dígitos)
+                </p>
               </div>
             </div>
 
@@ -338,11 +344,24 @@ export function ContactDialog({
                     <SelectValue placeholder="Seleccionar província" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Luanda">Luanda</SelectItem>
+                    <SelectItem value="Bengo">Bengo</SelectItem>
                     <SelectItem value="Benguela">Benguela</SelectItem>
+                    <SelectItem value="Bié">Bié</SelectItem>
+                    <SelectItem value="Cabinda">Cabinda</SelectItem>
+                    <SelectItem value="Cuando Cubango">Cuando Cubango</SelectItem>
+                    <SelectItem value="Cuanza Norte">Cuanza Norte</SelectItem>
+                    <SelectItem value="Cuanza Sul">Cuanza Sul</SelectItem>
+                    <SelectItem value="Cunene">Cunene</SelectItem>
                     <SelectItem value="Huambo">Huambo</SelectItem>
                     <SelectItem value="Huíla">Huíla</SelectItem>
-                    <SelectItem value="Cabinda">Cabinda</SelectItem>
+                    <SelectItem value="Luanda">Luanda</SelectItem>
+                    <SelectItem value="Lunda Norte">Lunda Norte</SelectItem>
+                    <SelectItem value="Lunda Sul">Lunda Sul</SelectItem>
+                    <SelectItem value="Malanje">Malanje</SelectItem>
+                    <SelectItem value="Moxico">Moxico</SelectItem>
+                    <SelectItem value="Namibe">Namibe</SelectItem>
+                    <SelectItem value="Uíge">Uíge</SelectItem>
+                    <SelectItem value="Zaire">Zaire</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

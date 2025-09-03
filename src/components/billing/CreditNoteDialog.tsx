@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,12 +19,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { mockCompanies, mockContacts } from '@/lib/mock-data';
 import { mockInvoices } from '@/data/billing-mock-data';
 import { CreditNote, CreditNoteFormData, Invoice } from '@/types/billing';
 import { Company, Contact } from '@/types/crm';
 import { toast } from 'sonner';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2, Shield, AlertTriangle } from 'lucide-react';
 import { KwanzaInput } from '@/components/angola/KwanzaCurrencyDisplay';
 import { TAX_EXEMPTION_CODES } from '@/types/billing';
 
@@ -133,6 +132,16 @@ export function CreditNoteDialog({
     };
   };
 
+  const generateAGTCertification = () => {
+    const timestamp = Date.now();
+    return {
+      atcud: `NC-${timestamp}`,
+      hash_control: `hash-nc-${timestamp.toString(36)}`,
+      digital_signature: `MEUCIQDCreditNote${timestamp}`,
+      qr_code_data: `NC|${formData.issue_date}|${calculateTotals().total}|${formData.original_invoice_number}|hash-nc-${timestamp.toString(36)}`
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -154,13 +163,13 @@ export function CreditNoteDialog({
     setLoading(true);
     try {
       const totals = calculateTotals();
+      const agtCert = generateAGTCertification();
       
       const savedCreditNote: CreditNote = {
         id: creditNote?.id || Date.now(),
         user_id: 1,
         document_number: creditNote?.document_number || `NC 2024/${String(Date.now()).slice(-6)}`,
-        atcud: `NC-${Date.now()}`,
-        hash_control: `hash-${Date.now()}`,
+        ...agtCert,
         original_invoice_id: formData.original_invoice_id,
         original_invoice_number: formData.original_invoice_number,
         company_id: formData.company_id,
@@ -179,7 +188,7 @@ export function CreditNoteDialog({
       };
       
       onSave(savedCreditNote);
-      toast.success(creditNote ? 'Nota de crédito actualizada com sucesso' : 'Nota de crédito criada com sucesso');
+      toast.success(creditNote ? 'Nota de crédito actualizada com sucesso' : 'Nota de crédito criada com certificação AGT');
     } catch (error) {
       toast.error('Erro ao guardar nota de crédito');
       console.error('Error saving credit note:', error);
@@ -226,7 +235,14 @@ export function CreditNoteDialog({
         original_invoice_number: invoice.document_number,
         company_id: invoice.company_id,
         contact_id: invoice.contact_id,
-        currency: invoice.currency
+        currency: invoice.currency,
+        items: [{
+          description: `Cancelamento de: ${invoice.document_number}`,
+          quantity: 1,
+          unit_price: invoice.subtotal,
+          discount_percentage: 0,
+          tax_rate: 14.00
+        }]
       }));
     }
   };
@@ -237,7 +253,8 @@ export function CreditNoteDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-red-600" />
             {creditNote ? 'Editar' : 'Criar'} Nota de Crédito
           </DialogTitle>
           <DialogDescription>
@@ -247,6 +264,14 @@ export function CreditNoteDialog({
             }
           </DialogDescription>
         </DialogHeader>
+
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Importante:</strong> A nota de crédito cancela ou corrige uma fatura já emitida. 
+            Este documento é obrigatório para reversão de IVA.
+          </AlertDescription>
+        </Alert>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Fatura Original */}
@@ -288,6 +313,7 @@ export function CreditNoteDialog({
                     <SelectItem value="Devolução de mercadoria">Devolução de mercadoria</SelectItem>
                     <SelectItem value="Desconto comercial">Desconto comercial</SelectItem>
                     <SelectItem value="Correção de dados">Correção de dados</SelectItem>
+                    <SelectItem value="Anulação por duplicação">Anulação por duplicação</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -437,11 +463,11 @@ export function CreditNoteDialog({
                   <span>Kz {totals.subtotal.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>IVA:</span>
+                  <span>IVA a Reverter:</span>
                   <span>Kz {totals.taxAmount.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
                 </div>
-                <div className="flex justify-between font-bold text-lg border-t pt-2">
-                  <span>Total:</span>
+                <div className="flex justify-between font-bold text-lg border-t pt-2 text-red-600">
+                  <span>Total a Creditar:</span>
                   <span>Kz {totals.total.toLocaleString('pt-AO', { minimumFractionDigits: 2 })}</span>
                 </div>
               </div>
@@ -455,7 +481,7 @@ export function CreditNoteDialog({
               id="notes"
               value={formData.notes || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-              placeholder="Observações adicionais..."
+              placeholder="Observações adicionais sobre a nota de crédito..."
               rows={3}
             />
           </div>
@@ -471,7 +497,8 @@ export function CreditNoteDialog({
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {creditNote ? 'Actualizar Nota de Crédito' : 'Criar Nota de Crédito'}
+              <Shield className="mr-2 h-4 w-4" />
+              {creditNote ? 'Actualizar Nota de Crédito' : 'Criar Nota de Crédito Certificada'}
             </Button>
           </DialogFooter>
         </form>

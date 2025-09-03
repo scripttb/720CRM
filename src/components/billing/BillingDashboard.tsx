@@ -21,10 +21,18 @@ import { InvoicesList } from './InvoicesList';
 import { CreditNotesList } from './CreditNotesList';
 import { PaymentReceiptsList } from './PaymentReceiptsList';
 import { SafTExport } from './SafTExport';
+import { ProformaDialog } from './ProformaDialog';
+import { InvoiceDialog } from './InvoiceDialog';
+import { CreditNoteDialog } from './CreditNoteDialog';
+import { PaymentReceiptDialog } from './PaymentReceiptDialog';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 
 export function BillingDashboard() {
   const [activeTab, setActiveTab] = useState('proformas');
+  const [proformaDialogOpen, setProformaDialogOpen] = useState(false);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+  const [creditNoteDialogOpen, setCreditNoteDialogOpen] = useState(false);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
   // Mock statistics - em produção, estes dados viriam da API
   const stats = {
@@ -36,6 +44,27 @@ export function BillingDashboard() {
     invoicesCount: 23,
     creditNotesCount: 3,
     receiptsCount: 19
+  };
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'proforma':
+        setActiveTab('proformas');
+        setProformaDialogOpen(true);
+        break;
+      case 'invoice':
+        setActiveTab('invoices');
+        setInvoiceDialogOpen(true);
+        break;
+      case 'credit-note':
+        setActiveTab('credit-notes');
+        setCreditNoteDialogOpen(true);
+        break;
+      case 'receipt':
+        setActiveTab('receipts');
+        setReceiptDialogOpen(true);
+        break;
+    }
   };
 
   return (
@@ -136,6 +165,14 @@ export function BillingDashboard() {
           </TabsList>
 
           <div className="flex items-center gap-2">
+            <Button onClick={() => handleQuickAction('proforma')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Proforma
+            </Button>
+            <Button onClick={() => handleQuickAction('invoice')}>
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Fatura
+            </Button>
             <SafTExport />
             <Button variant="outline">
               <Download className="mr-2 h-4 w-4" />
@@ -192,6 +229,47 @@ export function BillingDashboard() {
           <PaymentReceiptsList />
         </TabsContent>
       </Tabs>
+
+      {/* Quick Action Dialogs */}
+      <ProformaDialog
+        open={proformaDialogOpen}
+        onOpenChange={setProformaDialogOpen}
+        proforma={null}
+        onSave={() => {
+          setProformaDialogOpen(false);
+          toast.success('Proforma criada com sucesso');
+        }}
+      />
+
+      <InvoiceDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+        invoice={null}
+        onSave={() => {
+          setInvoiceDialogOpen(false);
+          toast.success('Fatura criada com sucesso');
+        }}
+      />
+
+      <CreditNoteDialog
+        open={creditNoteDialogOpen}
+        onOpenChange={setCreditNoteDialogOpen}
+        creditNote={null}
+        onSave={() => {
+          setCreditNoteDialogOpen(false);
+          toast.success('Nota de crédito criada com sucesso');
+        }}
+      />
+
+      <PaymentReceiptDialog
+        open={receiptDialogOpen}
+        onOpenChange={setReceiptDialogOpen}
+        paymentReceipt={null}
+        onSave={() => {
+          setReceiptDialogOpen(false);
+          toast.success('Recibo criado com sucesso');
+        }}
+      />
     </div>
   );
 }

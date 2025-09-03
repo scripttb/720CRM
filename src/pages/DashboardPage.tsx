@@ -1,10 +1,46 @@
+import { useState } from 'react';
 import { DashboardStats } from '@/components/crm/DashboardStats'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Plus, TrendingUp, Users, Target, Calendar, Receipt } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { CompanyDialog } from '@/components/crm/companies/CompanyDialog'
+import { ContactDialog } from '@/components/crm/contacts/ContactDialog'
+import { OpportunityDialog } from '@/components/crm/opportunities/OpportunityDialog'
+import { ActivityDialog } from '@/components/crm/activities/ActivityDialog'
+import { InvoiceDialog } from '@/components/billing/InvoiceDialog'
+import { mockCompanies } from '@/lib/mock-data'
 
 export function DashboardPage() {
+  const navigate = useNavigate();
+  const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [opportunityDialogOpen, setOpportunityDialogOpen] = useState(false);
+  const [activityDialogOpen, setActivityDialogOpen] = useState(false);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'company':
+        setCompanyDialogOpen(true);
+        break;
+      case 'contact':
+        setContactDialogOpen(true);
+        break;
+      case 'opportunity':
+        setOpportunityDialogOpen(true);
+        break;
+      case 'activity':
+        setActivityDialogOpen(true);
+        break;
+      case 'invoice':
+        setInvoiceDialogOpen(true);
+        break;
+      default:
+        navigate(`/dashboard/${action}`);
+    }
+  };
+
   return (
     <div className="flex-1 space-y-6 p-6">
       {/* Page Header */}
@@ -16,12 +52,10 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Link to="/dashboard/opportunities">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Oportunidade
-            </Button>
-          </Link>
+          <Button onClick={() => handleQuickAction('opportunity')}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Oportunidade
+          </Button>
         </div>
       </div>
 
@@ -42,36 +76,46 @@ export function DashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link to="/dashboard/companies">
-              <Button variant="outline" className="w-full justify-start">
-                <Users className="mr-2 h-4 w-4" />
-                Adicionar Empresa
-              </Button>
-            </Link>
-            <Link to="/dashboard/contacts">
-              <Button variant="outline" className="w-full justify-start">
-                <Users className="mr-2 h-4 w-4" />
-                Adicionar Contacto
-              </Button>
-            </Link>
-            <Link to="/dashboard/opportunities">
-              <Button variant="outline" className="w-full justify-start">
-                <Target className="mr-2 h-4 w-4" />
-                Adicionar Oportunidade
-              </Button>
-            </Link>
-            <Link to="/dashboard/activities">
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="mr-2 h-4 w-4" />
-                Agendar Actividade
-              </Button>
-            </Link>
-            <Link to="/dashboard/billing">
-              <Button variant="outline" className="w-full justify-start">
-                <Receipt className="mr-2 h-4 w-4" />
-                Nova Fatura
-              </Button>
-            </Link>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('company')}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Adicionar Empresa
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('contact')}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Adicionar Contacto
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('opportunity')}
+            >
+              <Target className="mr-2 h-4 w-4" />
+              Adicionar Oportunidade
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('activity')}
+            >
+              <Calendar className="mr-2 h-4 w-4" />
+              Agendar Actividade
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => handleQuickAction('invoice')}
+            >
+              <Receipt className="mr-2 h-4 w-4" />
+              Nova Fatura
+            </Button>
           </CardContent>
         </Card>
 
@@ -146,6 +190,58 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Action Dialogs */}
+      <CompanyDialog
+        open={companyDialogOpen}
+        onOpenChange={setCompanyDialogOpen}
+        company={null}
+        onSave={() => {
+          setCompanyDialogOpen(false);
+          navigate('/dashboard/companies');
+        }}
+      />
+
+      <ContactDialog
+        open={contactDialogOpen}
+        onOpenChange={setContactDialogOpen}
+        contact={null}
+        companies={mockCompanies}
+        onSave={() => {
+          setContactDialogOpen(false);
+          navigate('/dashboard/contacts');
+        }}
+      />
+
+      <OpportunityDialog
+        open={opportunityDialogOpen}
+        onOpenChange={setOpportunityDialogOpen}
+        opportunity={null}
+        onSave={() => {
+          setOpportunityDialogOpen(false);
+          navigate('/dashboard/opportunities');
+        }}
+      />
+
+      <ActivityDialog
+        open={activityDialogOpen}
+        onOpenChange={setActivityDialogOpen}
+        activity={null}
+        onSave={() => {
+          setActivityDialogOpen(false);
+          navigate('/dashboard/activities');
+        }}
+      />
+
+      <InvoiceDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+        invoice={null}
+        onSave={() => {
+          setInvoiceDialogOpen(false);
+          navigate('/dashboard/billing');
+        }}
+      />
     </div>
   )
 }

@@ -379,6 +379,9 @@ export function CompanyDialog({
                   onChange={(e) => handleInputChange('nif', e.target.value)}
                   placeholder="123456789"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Número de Identificação Fiscal (9 dígitos)
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="alvara_number">Alvará</Label>
@@ -388,6 +391,9 @@ export function CompanyDialog({
                   onChange={(e) => handleInputChange('alvara_number', e.target.value)}
                   placeholder="ALV/2024/001"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Alvará de funcionamento comercial
+                </p>
               </div>
             </div>
 

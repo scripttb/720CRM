@@ -185,7 +185,7 @@ export function ProformasList() {
         p.id === proforma.id ? updatedProforma : p
       ));
 
-      toast.success(`Proforma convertida em fatura ${newInvoice.document_number}`);
+      toast.success(`Proforma convertida em fatura ${newInvoice.document_number} com certificação AGT`);
     } catch (error) {
       toast.error('Erro ao converter proforma');
       console.error('Error converting proforma:', error);

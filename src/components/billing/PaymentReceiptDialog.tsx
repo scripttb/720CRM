@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,12 +20,13 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { mockCompanies, mockContacts } from '@/lib/mock-data';
 import { mockInvoices, mockPaymentMethods } from '@/data/billing-mock-data';
 import { PaymentReceipt, PaymentReceiptFormData, Invoice, PaymentMethod } from '@/types/billing';
 import { Company, Contact } from '@/types/crm';
 import { toast } from 'sonner';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Shield, CheckCircle, Info } from 'lucide-react';
 import { KwanzaInput } from '@/components/angola/KwanzaCurrencyDisplay';
 
 interface PaymentReceiptDialogProps {
@@ -95,6 +94,16 @@ export function PaymentReceiptDialog({
     return formData.invoices.reduce((sum, inv) => sum + inv.paid_amount, 0);
   };
 
+  const generateAGTCertification = () => {
+    const timestamp = Date.now();
+    return {
+      atcud: `RG-${timestamp}`,
+      hash_control: `hash-rg-${timestamp.toString(36)}`,
+      digital_signature: `MEUCIQDReceipt${timestamp}`,
+      qr_code_data: `RG|${formData.payment_date}|${calculateTotal()}|hash-rg-${timestamp.toString(36)}`
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -108,16 +117,21 @@ export function PaymentReceiptDialog({
       return;
     }
 
+    if (!formData.payment_method_id) {
+      toast.error('Método de pagamento é obrigatório');
+      return;
+    }
+
     setLoading(true);
     try {
       const total = calculateTotal();
+      const agtCert = generateAGTCertification();
       
       const savedPaymentReceipt: PaymentReceipt = {
         id: paymentReceipt?.id || Date.now(),
         user_id: 1,
         document_number: paymentReceipt?.document_number || `RG 2024/${String(Date.now()).slice(-6)}`,
-        atcud: `RG-${Date.now()}`,
-        hash_control: `hash-${Date.now()}`,
+        ...agtCert,
         company_id: formData.company_id,
         contact_id: formData.contact_id,
         issue_date: formData.issue_date,
@@ -134,7 +148,7 @@ export function PaymentReceiptDialog({
       };
       
       onSave(savedPaymentReceipt);
-      toast.success(paymentReceipt ? 'Recibo actualizado com sucesso' : 'Recibo criado com sucesso');
+      toast.success(paymentReceipt ? 'Recibo actualizado com sucesso' : 'Recibo criado com certificação AGT');
     } catch (error) {
       toast.error('Erro ao guardar recibo');
       console.error('Error saving payment receipt:', error);
@@ -145,6 +159,7 @@ export function PaymentReceiptDialog({
 
   const handleInvoiceToggle = (invoice: Invoice, checked: boolean) => {
     if (checked) {
+      const remainingAmount = invoice.total_amount - invoice.paid_amount;
       setFormData(prev => ({
         ...prev,
         invoices: [...prev.invoices, {
@@ -152,7 +167,7 @@ export function PaymentReceiptDialog({
           invoice_number: invoice.document_number,
           invoice_date: invoice.issue_date,
           invoice_total: invoice.total_amount,
-          paid_amount: invoice.total_amount - invoice.paid_amount
+          paid_amount: remainingAmount
         }]
       }));
     } else {
@@ -180,7 +195,8 @@ export function PaymentReceiptDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
             {paymentReceipt ? 'Editar' : 'Criar'} Recibo de Pagamento
           </DialogTitle>
           <DialogDescription>
@@ -190,6 +206,14 @@ export function PaymentReceiptDialog({
             }
           </DialogDescription>
         </DialogHeader>
+
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            O recibo de pagamento comprova a liquidação de faturas e é obrigatório para 
+            efeitos fiscais em Angola.
+          </AlertDescription>
+        </Alert>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Informações do Cliente */}
@@ -275,7 +299,7 @@ export function PaymentReceiptDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="payment_method">Método de Pagamento</Label>
+                <Label htmlFor="payment_method">Método de Pagamento *</Label>
                 <Select 
                   value={formData.payment_method_id?.toString() || ''} 
                   onValueChange={(value) => setFormData(prev => ({ 
@@ -289,7 +313,7 @@ export function PaymentReceiptDialog({
                   <SelectContent>
                     {paymentMethods.map((method) => (
                       <SelectItem key={method.id} value={method.id.toString()}>
-                        {method.name}
+                        {method.name} ({method.code})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -331,7 +355,7 @@ export function PaymentReceiptDialog({
                   const remainingAmount = invoice.total_amount - invoice.paid_amount;
                   
                   return (
-                    <Card key={invoice.id}>
+                    <Card key={invoice.id} className={isSelected ? 'border-green-200 bg-green-50' : ''}>
                       <CardContent className="pt-4">
                         <div className="flex items-start gap-4">
                           <Checkbox
@@ -345,6 +369,12 @@ export function PaymentReceiptDialog({
                                 <p className="text-sm text-muted-foreground">
                                   Emitida em {new Date(invoice.issue_date).toLocaleDateString('pt-AO')}
                                 </p>
+                                {invoice.atcud && (
+                                  <div className="flex items-center gap-1 text-xs text-green-600">
+                                    <Shield className="h-3 w-3" />
+                                    Certificada AGT
+                                  </div>
+                                )}
                               </div>
                               <div className="text-right">
                                 <p className="font-medium">
@@ -363,6 +393,9 @@ export function PaymentReceiptDialog({
                                   value={selectedInvoice?.paid_amount || remainingAmount}
                                   onChange={(value) => updateInvoicePaidAmount(invoice.id, value)}
                                 />
+                                <p className="text-xs text-muted-foreground">
+                                  Máximo: Kz {remainingAmount.toLocaleString('pt-AO')}
+                                </p>
                               </div>
                             )}
                           </div>
@@ -376,12 +409,15 @@ export function PaymentReceiptDialog({
           </div>
 
           {/* Total do Recibo */}
-          <Card>
+          <Card className="border-green-200 bg-green-50">
             <CardHeader>
-              <CardTitle>Total do Recibo</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-green-700">
+                <CheckCircle className="h-5 w-5" />
+                Total do Recibo
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold text-green-700">
                 Kz {calculateTotal().toLocaleString('pt-AO', { minimumFractionDigits: 2 })}
               </div>
               <p className="text-sm text-muted-foreground">
@@ -413,7 +449,8 @@ export function PaymentReceiptDialog({
             </Button>
             <Button type="submit" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {paymentReceipt ? 'Actualizar Recibo' : 'Criar Recibo'}
+              <Shield className="mr-2 h-4 w-4" />
+              {paymentReceipt ? 'Actualizar Recibo' : 'Criar Recibo Certificado'}
             </Button>
           </DialogFooter>
         </form>
