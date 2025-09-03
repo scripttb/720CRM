@@ -160,7 +160,7 @@ export function ProformaDialog({
         modify_time: new Date().toISOString(),
       };
       
-      onSave(savedProforma);
+      onSave(formData as any);
       toast.success(proforma ? 'Proforma actualizada com sucesso' : 'Proforma criada com sucesso');
     } catch (error) {
       toast.error('Erro ao guardar proforma');
