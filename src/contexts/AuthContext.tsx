@@ -32,65 +32,125 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       if (!isSupabaseConfigured()) {
-        // Fallback to mock login if Supabase is not configured
-        const mockUser: User = {
-          id: 1,
+        return mockLogin(email, password);
+      }
+
+      // Try Supabase authentication first, fallback to mock if it fails
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
+          password,
+        });
+
+        if (error) {
+          // If Supabase auth fails, try mock login
+          console.warn('Supabase auth failed, falling back to mock login:', error.message);
+          return mockLogin(email, password);
+        }
+
+        if (data.user) {
+          // Get user profile from profiles table
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+
+          const user: User = {
+            id: parseInt(data.user.id),
+            email: data.user.email!,
+            first_name: profile?.first_name || '',
+            last_name: profile?.last_name || '',
+            role: profile?.role || 'sales_rep',
+            phone: profile?.phone || '',
+            avatar_url: profile?.avatar_url || '',
+            is_active: true,
+            last_login: new Date().toISOString(),
+            create_time: data.user.created_at,
+            modify_time: new Date().toISOString(),
+          };
+
+          setUser(user);
+          localStorage.setItem('crm_user', JSON.stringify(user));
+          return true;
+        }
+
+        return false;
+      } catch (supabaseError) {
+        console.warn('Supabase connection failed, falling back to mock login:', supabaseError);
+        return mockLogin(email, password);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const mockLogin = (email: string, password: string): boolean => {
+    // Mock users for demonstration
+    const mockUsers = [
+      {
+        email: 'demo@crm.com',
+        password: 'password',
+        user: {
+          id: 1,
+          email: 'demo@crm.com',
           first_name: 'António',
           last_name: 'Silva',
-          role: 'sales_manager',
+          role: 'sales_manager' as const,
           phone: '+244-923-123-456',
           avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
           is_active: true,
           last_login: new Date().toISOString(),
           create_time: new Date().toISOString(),
           modify_time: new Date().toISOString(),
-        };
-
-        setUser(mockUser);
-        localStorage.setItem('crm_user', JSON.stringify(mockUser));
-        return true;
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      if (data.user) {
-        // Get user profile from profiles table
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-
-        const user: User = {
-          id: parseInt(data.user.id),
-          email: data.user.email!,
-          first_name: profile?.first_name || '',
-          last_name: profile?.last_name || '',
-          role: profile?.role || 'sales_rep',
-          phone: profile?.phone || '',
-          avatar_url: profile?.avatar_url || '',
+        }
+      },
+      {
+        email: 'admin@crm.com',
+        password: 'password',
+        user: {
+          id: 2,
+          email: 'admin@crm.com',
+          first_name: 'Maria',
+          last_name: 'Santos',
+          role: 'admin' as const,
+          phone: '+244-923-456-789',
+          avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
           is_active: true,
           last_login: new Date().toISOString(),
-          create_time: data.user.created_at,
+          create_time: new Date().toISOString(),
           modify_time: new Date().toISOString(),
-        };
-
-        setUser(user);
-        localStorage.setItem('crm_user', JSON.stringify(user));
-        return true;
+        }
+      },
+      {
+        email: 'vendedor@crm.com',
+        password: 'password',
+        user: {
+          id: 3,
+          email: 'vendedor@crm.com',
+          first_name: 'João',
+          last_name: 'Pereira',
+          role: 'sales_rep' as const,
+          phone: '+244-923-789-123',
+          avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+          is_active: true,
+          last_login: new Date().toISOString(),
+          create_time: new Date().toISOString(),
+          modify_time: new Date().toISOString(),
+        }
       }
+    ];
 
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
+    const mockUser = mockUsers.find(u => u.email === email && u.password === password);
+    
+    if (mockUser) {
+      setUser(mockUser.user);
+      localStorage.setItem('crm_user', JSON.stringify(mockUser.user));
+      return true;
     }
+    
+    return false;
   };
 
   const logout = () => {

@@ -23,7 +23,7 @@ export function LoginForm() {
     try {
       const success = await login(email, password);
       if (!success) {
-        setError('Email ou palavra-passe inválidos');
+        setError('Email ou palavra-passe inválidos. Tente: demo@crm.com / password');
       } else {
         toast.success('Bem-vindo ao Sistema CRM!');
       }
@@ -87,9 +87,12 @@ export function LoginForm() {
           </form>
 
           <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">Credenciais de Demonstração:</p>
-            <p className="text-xs text-muted-foreground">Email: demo@crm.com</p>
-            <p className="text-xs text-muted-foreground">Palavra-passe: password</p>
+            <p className="text-sm text-muted-foreground mb-2">Contas de Demonstração:</p>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground"><strong>Gestor:</strong> demo@crm.com / password</p>
+              <p className="text-xs text-muted-foreground"><strong>Admin:</strong> admin@crm.com / password</p>
+              <p className="text-xs text-muted-foreground"><strong>Vendedor:</strong> vendedor@crm.com / password</p>
+            </div>
           </div>
         </CardContent>
       </Card>
