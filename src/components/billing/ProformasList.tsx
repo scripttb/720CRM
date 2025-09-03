@@ -154,57 +154,6 @@ export function ProformasList() {
     }
 
     try {
-      // Simulate conversion
-      const newInvoice = {
-        id: Date.now(),
-        user_id: 1,
-        document_number: `FT 2024/${String(Date.now()).slice(-6)}`,
-        atcud: `FT-${Date.now()}`,
-        hash_control: `hash-${Date.now()}`,
-        company_id: proforma.company_id,
-        contact_id: proforma.contact_id,
-        proforma_id: proforma.id,
-        issue_date: new Date().toISOString().split('T')[0],
-        due_date: proforma.due_date,
-        subtotal: proforma.subtotal,
-        tax_amount: proforma.tax_amount,
-        total_amount: proforma.total_amount,
-        currency: proforma.currency,
-        status: 'issued' as const,
-        payment_status: 'pending' as const,
-        paid_amount: 0,
-        notes: proforma.notes,
-        terms_conditions: proforma.terms_conditions,
-        certification_date: new Date().toISOString(),
-        create_time: new Date().toISOString(),
-        modify_time: new Date().toISOString(),
-      };
-
-      // Update proforma status
-      const updatedProforma = {
-        ...proforma,
-        status: 'converted' as const,
-        converted_to_invoice_id: newInvoice.id,
-        modify_time: new Date().toISOString()
-      };
-
-      setProformas(proformas.map(p => 
-        p.id === proforma.id ? updatedProforma : p
-      ));
-
-      toast.success(`Proforma convertida em fatura ${newInvoice.document_number} com certificação AGT`);
-    } catch (error) {
-      toast.error('Erro ao converter proforma');
-      console.error('Error converting proforma:', error);
-    }
-  };
-
-  const handleConvertToInvoice = async (proforma: Proforma) => {
-    if (!confirm('Converter esta proforma em fatura?')) {
-      return;
-    }
-
-    try {
       await convertProformaToInvoice(proforma.id);
     } catch (error) {
       console.error('Error converting proforma:', error);
