@@ -13,8 +13,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { NotificationCenter } from '@/components/crm/notifications/NotificationCenter';
-import { Search, Settings, LogOut, User } from 'lucide-react';
+import { AdvancedSearchDialog } from '@/components/crm/search/AdvancedSearchDialog';
+import { Search, Settings, LogOut, User, Filter } from 'lucide-react';
 import { useIsMobile } from '@/components/ui/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface CRMHeaderProps {
   className?: string;
@@ -23,12 +25,14 @@ interface CRMHeaderProps {
 export function CRMHeader({ className }: CRMHeaderProps) {
   const { user, logout } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
   const isMobile = useIsMobile();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Implement global search functionality
-    console.log('Pesquisando por:', searchQuery);
+    if (searchQuery.trim()) {
+      setAdvancedSearchOpen(true);
+    }
   };
 
   const getUserInitials = (firstName: string, lastName: string) => {
@@ -51,6 +55,15 @@ export function CRMHeader({ className }: CRMHeaderProps) {
             className="pl-10"
           />
         </form>
+        
+        <Button 
+          variant="outline" 
+          size="icon"
+          onClick={() => setAdvancedSearchOpen(true)}
+          className={cn(isMobile ? "h-8 w-8" : "")}
+        >
+          <Filter className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Right side actions */}
@@ -107,6 +120,16 @@ export function CRMHeader({ className }: CRMHeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Advanced Search Dialog */}
+      <AdvancedSearchDialog
+        open={advancedSearchOpen}
+        onOpenChange={setAdvancedSearchOpen}
+        onResultSelect={(result) => {
+          // Navigate to result
+          window.location.href = result.url;
+        }}
+      />
     </header>
   );
 }

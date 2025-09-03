@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SettingsPanel } from '@/components/crm/settings/SettingsPanel'
 import { PermissionManager } from '@/components/crm/permissions/PermissionManager'
-import { Settings, Shield } from 'lucide-react'
+import { WorkflowManager } from '@/components/crm/workflow/WorkflowManager'
+import { Settings, Shield, Zap } from 'lucide-react'
 
 export function SettingsPage() {
   return (
@@ -26,6 +27,10 @@ export function SettingsPage() {
             <Shield className="h-4 w-4" />
             Permissões
           </TabsTrigger>
+          <TabsTrigger value="workflows" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            Workflows
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -34,6 +39,10 @@ export function SettingsPage() {
 
         <TabsContent value="permissions">
           <PermissionManager />
+        </TabsContent>
+
+        <TabsContent value="workflows">
+          <WorkflowManager />
         </TabsContent>
       </Tabs>
     </div>
