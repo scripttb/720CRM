@@ -10,6 +10,24 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check for existing session
+    const savedUser = localStorage.getItem('crm_user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+    setIsLoading(false);
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setIsLoading(true);
       setError(null);
 
       // Try mock authentication first (since database might not be set up)
@@ -25,7 +43,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
         };
         setUser(user);
         localStorage.setItem('crm_user', JSON.stringify(user));
-        return;
+        return true;
       }
 
       // Try Supabase authentication first, fallback to mock if it fails
@@ -61,6 +79,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
             last_login: new Date().toISOString(),
             create_time: data.user.created_at,
             modify_time: new Date().toISOString(),
+          };
+          setUser(user);
+          localStorage.setItem('crm_user', JSON.stringify(user));
+          return true;
+        }
+      } catch (supabaseError) {
+        console.warn('Supabase authentication failed, trying mock login');
+        return mockLogin(email, password);
+      }
+
       // Try Supabase authentication as fallback
       try {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -81,6 +109,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
           };
           setUser(user);
           localStorage.setItem('crm_user', JSON.stringify(user));
+          return true;
         }
       } catch (supabaseError) {
         console.warn('Supabase authentication failed:', supabaseError);
@@ -91,6 +120,10 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
       console.error('Login error:', errorMessage);
       setError(errorMessage);
       throw new Error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
+    return false;
   };
 
   const mockLogin = (email: string, password: string): boolean => {
