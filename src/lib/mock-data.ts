@@ -1,4 +1,75 @@
-import type { Company, Contact, Opportunity, Activity, User, DashboardStats } from "@/types/crm"
+import type { 
+  Company, 
+  Contact, 
+  Opportunity, 
+  Activity, 
+  User, 
+  DashboardStats,
+  PipelineStage 
+} from "@/types/crm"
+
+export const mockPipelineStages: PipelineStage[] = [
+  {
+    id: 1,
+    name: 'Contacto Inicial',
+    description: 'Primeiro contacto ou consulta',
+    stage_order: 1,
+    probability: 10,
+    is_active: true,
+    create_time: '2024-01-01T00:00:00Z',
+    modify_time: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 2,
+    name: 'Qualificado',
+    description: 'Contacto foi qualificado como cliente potencial',
+    stage_order: 2,
+    probability: 25,
+    is_active: true,
+    create_time: '2024-01-01T00:00:00Z',
+    modify_time: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 3,
+    name: 'Proposta',
+    description: 'Proposta foi enviada ao prospecto',
+    stage_order: 3,
+    probability: 50,
+    is_active: true,
+    create_time: '2024-01-01T00:00:00Z',
+    modify_time: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 4,
+    name: 'Negociação',
+    description: 'Em negociação activa com o prospecto',
+    stage_order: 4,
+    probability: 75,
+    is_active: true,
+    create_time: '2024-01-01T00:00:00Z',
+    modify_time: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 5,
+    name: 'Negócio Fechado',
+    description: 'Negócio foi fechado com sucesso',
+    stage_order: 5,
+    probability: 100,
+    is_active: true,
+    create_time: '2024-01-01T00:00:00Z',
+    modify_time: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 6,
+    name: 'Negócio Perdido',
+    description: 'Negócio não foi bem-sucedido',
+    stage_order: 6,
+    probability: 0,
+    is_active: true,
+    create_time: '2024-01-01T00:00:00Z',
+    modify_time: '2024-01-01T00:00:00Z',
+  },
+]
 
 export const mockCompanies: Company[] = [
   {
@@ -14,12 +85,18 @@ export const mockCompanies: Company[] = [
     state: 'Luanda',
     country: 'Angola',
     postal_code: '1316',
+    logo_url: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop',
     description: 'Empresa Nacional de Combustíveis de Angola',
     annual_revenue: 15000000000,
     employee_count: 8000,
     assigned_user_id: 1,
     create_time: '2024-01-15T10:00:00Z',
     modify_time: '2024-01-15T10:00:00Z',
+    province: 'Luanda',
+    municipality: 'Luanda',
+    nif: '5417000001',
+    alvara_number: 'ALV/2024/001',
+    tax_regime: 'Regime Geral',
   },
   {
     id: 2,
@@ -33,12 +110,18 @@ export const mockCompanies: Company[] = [
     city: 'Luanda',
     state: 'Luanda',
     country: 'Angola',
+    logo_url: 'https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=100&h=100&fit=crop',
     description: 'Banco comercial angolano',
     annual_revenue: 2500000000,
     employee_count: 3500,
     assigned_user_id: 1,
     create_time: '2024-01-20T14:30:00Z',
     modify_time: '2024-01-20T14:30:00Z',
+    province: 'Luanda',
+    municipality: 'Luanda',
+    nif: '5417000002',
+    alvara_number: 'ALV/2024/002',
+    tax_regime: 'Regime Geral',
   },
   {
     id: 3,
@@ -52,14 +135,44 @@ export const mockCompanies: Company[] = [
     city: 'Luanda',
     state: 'Luanda',
     country: 'Angola',
+    logo_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=100&h=100&fit=crop',
     description: 'Operadora de telecomunicações móveis',
     annual_revenue: 1800000000,
     employee_count: 2500,
     assigned_user_id: 1,
     create_time: '2024-01-25T09:15:00Z',
     modify_time: '2024-01-25T09:15:00Z',
+    province: 'Luanda',
+    municipality: 'Luanda',
+    nif: '5417000003',
+    alvara_number: 'ALV/2024/003',
+    tax_regime: 'Regime Geral',
   },
-];
+  {
+    id: 4,
+    name: 'Empresa Geral do Fomento',
+    industry: 'Construção Civil',
+    size: 'Média Empresa',
+    website: 'https://egf.ao',
+    phone: '+244-222-445-000',
+    email: 'geral@egf.ao',
+    address: 'Avenida 4 de Fevereiro, 42',
+    city: 'Luanda',
+    state: 'Luanda',
+    country: 'Angola',
+    description: 'Empresa de construção e obras públicas',
+    annual_revenue: 850000000,
+    employee_count: 1200,
+    assigned_user_id: 1,
+    create_time: '2024-01-28T11:20:00Z',
+    modify_time: '2024-01-28T11:20:00Z',
+    province: 'Luanda',
+    municipality: 'Luanda',
+    nif: '5417000004',
+    alvara_number: 'ALV/2024/004',
+    tax_regime: 'Regime Geral',
+  },
+]
 
 export const mockContacts: Contact[] = [
   {
@@ -73,10 +186,16 @@ export const mockContacts: Contact[] = [
     job_title: 'Director Executivo',
     department: 'Direcção Executiva',
     is_primary: true,
+    avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
     notes: 'Decisor principal, prefere comunicação por email',
     assigned_user_id: 1,
     create_time: '2024-01-15T10:30:00Z',
     modify_time: '2024-01-15T10:30:00Z',
+    bi_number: '123456789AB123',
+    nif: '123456789',
+    nationality: 'Angolana',
+    province: 'Luanda',
+    municipality: 'Luanda',
   },
   {
     id: 2,
@@ -89,10 +208,16 @@ export const mockContacts: Contact[] = [
     job_title: 'Directora de Tecnologia',
     department: 'Tecnologia',
     is_primary: false,
+    avatar_url: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
     notes: 'Responsável por decisões técnicas, muito detalhista',
     assigned_user_id: 1,
     create_time: '2024-01-20T15:00:00Z',
     modify_time: '2024-01-20T15:00:00Z',
+    bi_number: '987654321CD456',
+    nif: '987654321',
+    nationality: 'Angolana',
+    province: 'Luanda',
+    municipality: 'Luanda',
   },
   {
     id: 3,
@@ -105,12 +230,40 @@ export const mockContacts: Contact[] = [
     job_title: 'Director Comercial',
     department: 'Vendas',
     is_primary: true,
+    avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     notes: 'Responsável por parcerias estratégicas',
     assigned_user_id: 1,
     create_time: '2024-01-25T09:30:00Z',
     modify_time: '2024-01-25T09:30:00Z',
+    bi_number: '456789123EF789',
+    nif: '456789123',
+    nationality: 'Angolana',
+    province: 'Luanda',
+    municipality: 'Luanda',
   },
-];
+  {
+    id: 4,
+    company_id: 4,
+    first_name: 'Ana',
+    last_name: 'Costa',
+    email: 'ana.costa@egf.ao',
+    phone: '+244-222-445-100',
+    mobile: '+244-926-789-012',
+    job_title: 'Engenheira Civil',
+    department: 'Engenharia',
+    is_primary: true,
+    avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+    notes: 'Especialista em projectos de grande escala',
+    assigned_user_id: 1,
+    create_time: '2024-01-28T11:30:00Z',
+    modify_time: '2024-01-28T11:30:00Z',
+    bi_number: '789123456GH012',
+    nif: '789123456',
+    nationality: 'Angolana',
+    province: 'Luanda',
+    municipality: 'Luanda',
+  },
+]
 
 export const mockOpportunities: Opportunity[] = [
   {
@@ -164,7 +317,24 @@ export const mockOpportunities: Opportunity[] = [
     create_time: '2024-01-25T10:00:00Z',
     modify_time: '2024-01-25T10:00:00Z',
   },
-];
+  {
+    id: 4,
+    name: 'Sistema de Gestão de Obras - EGF',
+    company_id: 4,
+    contact_id: 4,
+    assigned_user_id: 1,
+    pipeline_stage_id: 2,
+    value: 12500000,
+    currency: 'AOA',
+    probability: 30,
+    expected_close_date: '2024-07-10',
+    source: 'Referência',
+    description: 'Sistema de gestão para projectos de construção civil',
+    status: 'open',
+    create_time: '2024-01-28T12:00:00Z',
+    modify_time: '2024-01-28T12:00:00Z',
+  },
+]
 
 export const mockActivities: Activity[] = [
   {
@@ -221,7 +391,24 @@ export const mockActivities: Activity[] = [
     create_time: '2024-01-25T11:00:00Z',
     modify_time: '2024-01-26T09:15:00Z',
   },
-];
+  {
+    id: 4,
+    type: 'task',
+    subject: 'Preparar Documentação Técnica',
+    description: 'Preparar toda a documentação técnica para a proposta EGF',
+    company_id: 4,
+    contact_id: 4,
+    opportunity_id: 4,
+    assigned_user_id: 1,
+    created_by_user_id: 1,
+    status: 'pending',
+    priority: 'medium',
+    due_date: '2024-02-05T17:00:00Z',
+    duration_minutes: 120,
+    create_time: '2024-01-28T13:00:00Z',
+    modify_time: '2024-01-28T13:00:00Z',
+  },
+]
 
 export const mockUsers: User[] = [
   {
@@ -236,6 +423,9 @@ export const mockUsers: User[] = [
     last_login: '2024-01-25T09:00:00Z',
     create_time: '2024-01-01T00:00:00Z',
     modify_time: '2024-01-25T09:00:00Z',
+    bi_number: '123456789AB123',
+    nif: '123456789',
+    preferred_language: 'pt-AO',
   },
   {
     id: 2,
@@ -249,6 +439,9 @@ export const mockUsers: User[] = [
     last_login: '2024-01-24T16:30:00Z',
     create_time: '2024-01-01T00:00:00Z',
     modify_time: '2024-01-24T16:30:00Z',
+    bi_number: '987654321CD456',
+    nif: '987654321',
+    preferred_language: 'pt-AO',
   },
   {
     id: 3,
@@ -262,16 +455,19 @@ export const mockUsers: User[] = [
     last_login: '2024-01-23T11:45:00Z',
     create_time: '2024-01-01T00:00:00Z',
     modify_time: '2024-01-23T11:45:00Z',
+    bi_number: '456789123EF789',
+    nif: '456789123',
+    preferred_language: 'pt-AO',
   },
-];
+]
 
 export function getMockDashboardStats(): DashboardStats {
-  const wonOpportunities = 15;
-  const lostOpportunities = 8;
-  const totalOpportunities = mockOpportunities.length + wonOpportunities + lostOpportunities;
+  const wonOpportunities = 15
+  const lostOpportunities = 8
+  const totalOpportunities = mockOpportunities.length + wonOpportunities + lostOpportunities
   const totalRevenue = mockOpportunities
     .filter(opp => opp.status === 'won')
-    .reduce((sum, opp) => sum + (opp.value || 0), 0) + 2500000;
+    .reduce((sum, opp) => sum + (opp.value || 0), 0) + 95000000
 
   return {
     totalCompanies: mockCompanies.length,
@@ -286,5 +482,5 @@ export function getMockDashboardStats(): DashboardStats {
     ).length,
     conversionRate: (wonOpportunities / totalOpportunities) * 100,
     averageDealSize: totalRevenue / (wonOpportunities || 1),
-  };
+  }
 }
