@@ -15,20 +15,33 @@ export function DashboardStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // Use mock data directly to avoid database errors
-        const data = getMockDashboardStats();
+        // Try to get real-time stats from API, fallback to mock
+        let data;
+        try {
+          data = await api.get('/dashboard/stats');
+        } catch (apiError) {
+          console.warn('API stats failed, using mock data');
+          data = getMockDashboardStats();
+        }
+        
         setStats(data);
         setError(null)
       } catch (error) {
         console.error("Failed to fetch dashboard stats:", error)
-        setStats(getMockDashboardStats());
-        setError(null)
+        // Final fallback
+        const fallbackData = getMockDashboardStats();
+        setStats(fallbackData);
+        setError(null);
       } finally {
         setLoading(false)
       }
     }
 
     fetchStats()
+    
+    // Refresh stats every 5 minutes
+    const interval = setInterval(fetchStats, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [])
 
   if (loading) {

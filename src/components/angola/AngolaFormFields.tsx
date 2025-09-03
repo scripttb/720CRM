@@ -1,38 +1,84 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { angolaLocalization, angolaValidators } from '@/lib/angola-localization';
-import { useTranslation } from '@/lib/angola-translations';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
+import { angolaLocalization } from '@/lib/angola-localization';
+import { validateAngolaDocument, formatDocument, angolaAddressUtils } from '@/lib/angola-utils';
+import { useTranslation } from '@/lib/angola-translations';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 
 interface AngolaFormFieldsProps {
   formData: any;
   onFieldChange: (field: string, value: string) => void;
   showValidation?: boolean;
+  fieldPrefix?: string;
 }
 
-export function AngolaFormFields({ formData, onFieldChange, showValidation = true }: AngolaFormFieldsProps) {
+export function AngolaFormFields({ 
+  formData, 
+  onFieldChange, 
+  showValidation = true,
+  fieldPrefix = ''
+}: AngolaFormFieldsProps) {
   const { t } = useTranslation();
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
+
+  // Update municipalities when province changes
+  useEffect(() => {
+    const province = formData[`${fieldPrefix}province`] || formData.province;
+    if (province) {
+      const municipalitiesList = angolaAddressUtils.getMunicipalities(province);
+      setMunicipalities(municipalitiesList);
+      
+      // Clear municipality if it's not valid for the new province
+      const currentMunicipality = formData[`${fieldPrefix}municipality`] || formData.municipality;
+      if (currentMunicipality && !municipalitiesList.includes(currentMunicipality)) {
+        onFieldChange(`${fieldPrefix}municipality`, '');
+      }
+    } else {
+      setMunicipalities([]);
+    }
+  }, [formData, fieldPrefix, onFieldChange]);
 
   const validateField = (field: string, value: string) => {
+    if (!showValidation) return;
+    
     const errors: Record<string, string> = { ...validationErrors };
     
-    switch (field) {
+    switch (field.replace(fieldPrefix, '')) {
       case 'bi_number':
-        if (value && !angolaValidators.validateBI(value)) {
-          errors[field] = t('messages.invalidBI');
+        const biValidation = validateAngolaDocument.bi(value);
+        if (!biValidation.isValid && biValidation.message) {
+          errors[field] = biValidation.message;
         } else {
           delete errors[field];
         }
         break;
       case 'nif':
-        if (value && !angolaValidators.validateNIF(value)) {
-          errors[field] = t('messages.invalidNIF');
+        const nifValidation = validateAngolaDocument.nif(value);
+        if (!nifValidation.isValid && nifValidation.message) {
+          errors[field] = nifValidation.message;
+        } else {
+          delete errors[field];
+        }
+        break;
+      case 'email':
+        const emailValidation = validateAngolaDocument.email(value);
+        if (!emailValidation.isValid && emailValidation.message) {
+          errors[field] = emailValidation.message;
+        } else {
+          delete errors[field];
+        }
+        break;
+      case 'phone':
+      case 'mobile':
+        const phoneValidation = validateAngolaDocument.phone(value);
+        if (!phoneValidation.isValid && phoneValidation.message) {
+          errors[field] = phoneValidation.message;
         } else {
           delete errors[field];
         }
@@ -46,22 +92,42 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
 
   const handleFieldChange = (field: string, value: string) => {
     let formattedValue = value;
+    const fieldName = field.replace(fieldPrefix, '');
     
     // Formatação automática para campos específicos
-    switch (field) {
+    switch (fieldName) {
       case 'bi_number':
-        formattedValue = angolaValidators.formatBI(value);
+        formattedValue = formatDocument.bi(value);
         break;
       case 'nif':
-        formattedValue = angolaValidators.formatNIF(value);
+        formattedValue = formatDocument.nif(value);
+        break;
+      case 'phone':
+      case 'mobile':
+        formattedValue = formatDocument.phone(value);
         break;
     }
     
     onFieldChange(field, formattedValue);
-    
-    if (showValidation) {
-      validateField(field, formattedValue);
-    }
+    validateField(field, formattedValue);
+  };
+
+  const getFieldValue = (field: string) => {
+    return formData[`${fieldPrefix}${field}`] || formData[field] || '';
+  };
+
+  const renderValidationMessage = (field: string) => {
+    const error = validationErrors[`${fieldPrefix}${field}`];
+    if (!error) return null;
+
+    return (
+      <Alert variant="destructive" className="py-2">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription className="text-sm">
+          {error}
+        </AlertDescription>
+      </Alert>
+    );
   };
 
   return (
@@ -69,44 +135,44 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
       {/* Campos de Documentação Angolana */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="bi_number">{t('fields.bi')}</Label>
-          <Input
-            id="bi_number"
-            value={formData.bi_number || ''}
-            onChange={(e) => handleFieldChange('bi_number', e.target.value)}
-            placeholder={angolaLocalization.documents.types.BI.placeholder}
-            className={validationErrors.bi_number ? 'border-red-500' : ''}
-          />
-          {validationErrors.bi_number && (
-            <Alert variant="destructive" className="py-2">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                {validationErrors.bi_number}
-              </AlertDescription>
-            </Alert>
-          )}
+          <Label htmlFor={`${fieldPrefix}bi_number`}>
+            {t('fields.bi')} {formData.hasOwnProperty('company_id') ? '' : '*'}
+          </Label>
+          <div className="relative">
+            <Input
+              id={`${fieldPrefix}bi_number`}
+              value={getFieldValue('bi_number')}
+              onChange={(e) => handleFieldChange(`${fieldPrefix}bi_number`, e.target.value)}
+              placeholder={angolaLocalization.documents.types.BI.placeholder}
+              className={validationErrors[`${fieldPrefix}bi_number`] ? 'border-red-500' : ''}
+            />
+            {getFieldValue('bi_number') && !validationErrors[`${fieldPrefix}bi_number`] && (
+              <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600" />
+            )}
+          </div>
+          {renderValidationMessage('bi_number')}
           <p className="text-xs text-muted-foreground">
             {angolaLocalization.documents.types.BI.description}
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="nif">{t('fields.nif')}</Label>
-          <Input
-            id="nif"
-            value={formData.nif || ''}
-            onChange={(e) => handleFieldChange('nif', e.target.value)}
-            placeholder={angolaLocalization.documents.types.NIF.placeholder}
-            className={validationErrors.nif ? 'border-red-500' : ''}
-          />
-          {validationErrors.nif && (
-            <Alert variant="destructive" className="py-2">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                {validationErrors.nif}
-              </AlertDescription>
-            </Alert>
-          )}
+          <Label htmlFor={`${fieldPrefix}nif`}>
+            {t('fields.nif')} {formData.hasOwnProperty('company_id') ? '*' : ''}
+          </Label>
+          <div className="relative">
+            <Input
+              id={`${fieldPrefix}nif`}
+              value={getFieldValue('nif')}
+              onChange={(e) => handleFieldChange(`${fieldPrefix}nif`, e.target.value)}
+              placeholder={angolaLocalization.documents.types.NIF.placeholder}
+              className={validationErrors[`${fieldPrefix}nif`] ? 'border-red-500' : ''}
+            />
+            {getFieldValue('nif') && !validationErrors[`${fieldPrefix}nif`] && (
+              <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-600" />
+            )}
+          </div>
+          {renderValidationMessage('nif')}
           <p className="text-xs text-muted-foreground">
             {angolaLocalization.documents.types.NIF.description}
           </p>
@@ -116,15 +182,16 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
       {/* Localização Angolana */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="province">{t('fields.province')}</Label>
+          <Label htmlFor={`${fieldPrefix}province`}>{t('fields.province')}</Label>
           <Select 
-            value={formData.province || ''} 
-            onValueChange={(value) => onFieldChange('province', value)}
+            value={getFieldValue('province')} 
+            onValueChange={(value) => onFieldChange(`${fieldPrefix}province`, value)}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('messages.selectOption')} />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="">Seleccionar província</SelectItem>
               {angolaLocalization.provinces.map((province) => (
                 <SelectItem key={province} value={province}>
                   {province}
@@ -135,23 +202,38 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="municipality">{t('fields.municipality')}</Label>
-          <Input
-            id="municipality"
-            value={formData.municipality || ''}
-            onChange={(e) => onFieldChange('municipality', e.target.value)}
-            placeholder={t('fields.municipality')}
-          />
+          <Label htmlFor={`${fieldPrefix}municipality`}>{t('fields.municipality')}</Label>
+          <Select 
+            value={getFieldValue('municipality')} 
+            onValueChange={(value) => onFieldChange(`${fieldPrefix}municipality`, value)}
+            disabled={!getFieldValue('province')}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder={
+                getFieldValue('province') 
+                  ? "Seleccionar município" 
+                  : "Primeiro seleccione a província"
+              } />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Seleccionar município</SelectItem>
+              {municipalities.map((municipality) => (
+                <SelectItem key={municipality} value={municipality}>
+                  {municipality}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
       {/* Nacionalidade (padrão Angola) */}
       <div className="space-y-2">
-        <Label htmlFor="nationality">{t('fields.nationality')}</Label>
+        <Label htmlFor={`${fieldPrefix}nationality`}>{t('fields.nationality')}</Label>
         <Input
-          id="nationality"
-          value={formData.nationality || 'Angolana'}
-          onChange={(e) => onFieldChange('nationality', e.target.value)}
+          id={`${fieldPrefix}nationality`}
+          value={getFieldValue('nationality') || 'Angolana'}
+          onChange={(e) => onFieldChange(`${fieldPrefix}nationality`, e.target.value)}
           placeholder="Angolana"
         />
       </div>
@@ -160,11 +242,11 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
       {formData.hasOwnProperty('alvara_number') && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="alvara_number">{t('fields.alvara')}</Label>
+            <Label htmlFor={`${fieldPrefix}alvara_number`}>{t('documents.alvara')}</Label>
             <Input
-              id="alvara_number"
-              value={formData.alvara_number || ''}
-              onChange={(e) => onFieldChange('alvara_number', e.target.value)}
+              id={`${fieldPrefix}alvara_number`}
+              value={getFieldValue('alvara_number')}
+              onChange={(e) => onFieldChange(`${fieldPrefix}alvara_number`, e.target.value)}
               placeholder={angolaLocalization.documents.types.ALVARA.placeholder}
             />
             <p className="text-xs text-muted-foreground">
@@ -173,10 +255,10 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tax_regime">{t('fields.taxRegime')}</Label>
+            <Label htmlFor={`${fieldPrefix}tax_regime`}>{t('fields.taxRegime')}</Label>
             <Select 
-              value={formData.tax_regime || ''} 
-              onValueChange={(value) => onFieldChange('tax_regime', value)}
+              value={getFieldValue('tax_regime')} 
+              onValueChange={(value) => onFieldChange(`${fieldPrefix}tax_regime`, value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('messages.selectOption')} />
@@ -196,10 +278,10 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
       {/* Sector de Actividade */}
       {formData.hasOwnProperty('industry') && (
         <div className="space-y-2">
-          <Label htmlFor="industry">{t('fields.industry')}</Label>
+          <Label htmlFor={`${fieldPrefix}industry`}>{t('fields.industry')}</Label>
           <Select 
-            value={formData.industry || ''} 
-            onValueChange={(value) => onFieldChange('industry', value)}
+            value={getFieldValue('industry')} 
+            onValueChange={(value) => onFieldChange(`${fieldPrefix}industry`, value)}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('messages.selectOption')} />
@@ -218,10 +300,10 @@ export function AngolaFormFields({ formData, onFieldChange, showValidation = tru
       {/* Dimensão da Empresa */}
       {formData.hasOwnProperty('size') && (
         <div className="space-y-2">
-          <Label htmlFor="size">{t('fields.size')}</Label>
+          <Label htmlFor={`${fieldPrefix}size`}>Dimensão da Empresa</Label>
           <Select 
-            value={formData.size || ''} 
-            onValueChange={(value) => onFieldChange('size', value)}
+            value={getFieldValue('size')} 
+            onValueChange={(value) => onFieldChange(`${fieldPrefix}size`, value)}
           >
             <SelectTrigger>
               <SelectValue placeholder={t('messages.selectOption')} />

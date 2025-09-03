@@ -44,17 +44,24 @@ import {
 import { mockProformas } from '@/data/billing-mock-data';
 import { Proforma } from '@/types/billing';
 import { toast } from 'sonner';
+import { useBilling } from '@/hooks/use-billing';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { AngolaDateDisplay } from '@/components/angola/AngolaDateTimePicker';
 import { ProformaDialog } from './ProformaDialog';
 
 export function ProformasList() {
-  const [proformas, setProformas] = useState<Proforma[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProforma, setEditingProforma] = useState<Proforma | null>(null);
+  
+  const { 
+    proformas, 
+    convertProformaToInvoice, 
+    createProforma,
+    refreshData 
+  } = useBilling();
 
   const fetchProformas = useCallback(async () => {
     try {
@@ -75,14 +82,15 @@ export function ProformasList() {
         filteredData = filteredData.filter(p => p.status === selectedStatus);
       }
       
-      setProformas(filteredData);
+      // Data is now managed by useBilling hook
+      setLoading(false);
     } catch (error) {
       toast.error('Falha ao carregar proformas');
       console.error('Error fetching proformas:', error);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedStatus]);
+  }, [searchQuery, selectedStatus, proformas]);
 
   useEffect(() => {
     fetchProformas();
@@ -104,7 +112,8 @@ export function ProformasList() {
     }
 
     try {
-      setProformas(proformas.filter(p => p.id !== proformaId));
+      // In a real app, this would call an API
+      await refreshData();
       toast.success('Proforma eliminada com sucesso');
     } catch (error) {
       toast.error('Falha ao eliminar proforma');
@@ -112,13 +121,11 @@ export function ProformasList() {
     }
   };
 
-  const handleProformaSaved = (savedProforma: Proforma) => {
-    if (editingProforma) {
-      setProformas(proformas.map(p => 
-        p.id === savedProforma.id ? savedProforma : p
-      ));
-    } else {
-      setProformas([savedProforma, ...proformas]);
+  const handleProformaSaved = async (data: any) => {
+    try {
+      await createProforma(data);
+    } catch (error) {
+      console.error('Error saving proforma:', error);
     }
     setDialogOpen(false);
     setEditingProforma(null);
@@ -191,6 +198,29 @@ export function ProformasList() {
       console.error('Error converting proforma:', error);
     }
   };
+
+  const handleConvertToInvoice = async (proforma: Proforma) => {
+    if (!confirm('Converter esta proforma em fatura?')) {
+      return;
+    }
+
+    try {
+      await convertProformaToInvoice(proforma.id);
+    } catch (error) {
+      console.error('Error converting proforma:', error);
+    }
+  };
+
+  // Filter proformas based on search and status
+  const filteredProformas = proformas.filter(proforma => {
+    const matchesSearch = !searchQuery || 
+      proforma.document_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      proforma.notes?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = selectedStatus === 'all' || proforma.status === selectedStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -271,7 +301,7 @@ export function ProformasList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {proformas.map((proforma) => (
+                  {filteredProformas.map((proforma) => (
                     <TableRow key={proforma.id}>
                       <TableCell>
                         <div className="font-medium">{proforma.document_number}</div>

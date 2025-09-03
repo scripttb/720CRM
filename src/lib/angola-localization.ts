@@ -9,12 +9,11 @@ export const angolaLocalization = {
     decimalSeparator: ',',
     thousandsSeparator: '.',
     format: (amount: number) => {
-      return new Intl.NumberFormat('pt-AO', {
-        style: 'currency',
-        currency: 'AOA',
+      const formatted = amount.toLocaleString('pt-AO', {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }).format(amount).replace('AOA', 'Kz');
+        maximumFractionDigits: 2
+      });
+      return `Kz ${formatted}`;
     }
   },
   dateTime: {
@@ -71,6 +70,30 @@ export const angolaLocalization = {
     'Luanda', 'Lunda Norte', 'Lunda Sul', 'Malanje', 'Moxico',
     'Namibe', 'Uíge', 'Zaire'
   ],
+  getMunicipalities: (province: string): string[] => {
+    const municipalities: Record<string, string[]> = {
+      'Luanda': ['Luanda', 'Belas', 'Cacuaco', 'Cazenga', 'Icolo e Bengo', 'Quiçama', 'Viana'],
+      'Benguela': ['Benguela', 'Baía Farta', 'Balombo', 'Bocoio', 'Caimbambo', 'Catumbela', 'Chongorói', 'Cubal', 'Ganda', 'Lobito'],
+      'Huambo': ['Huambo', 'Bailundo', 'Caála', 'Catchiungo', 'Ekunha', 'Londuimbali', 'Longonjo', 'Mungo', 'Tchicala-Tcholoanga', 'Tchindjenje', 'Ukuma'],
+      'Huíla': ['Lubango', 'Caconda', 'Cacula', 'Caluquembe', 'Chiange', 'Chibia', 'Chicomba', 'Chipindo', 'Cuvango', 'Humpata', 'Jamba', 'Matala', 'Quilengues', 'Quipungo'],
+      'Bié': ['Kuito', 'Andulo', 'Camacupa', 'Catabola', 'Chinguar', 'Chitembo', 'Cunhinga', 'Nharea'],
+      'Cabinda': ['Cabinda', 'Belize', 'Buco-Zau', 'Cacongo'],
+      'Cuando Cubango': ['Menongue', 'Calai', 'Cuangar', 'Cuchi', 'Cuito Cuanavale', 'Dirico', 'Mavinga', 'Nancova', 'Rivungo'],
+      'Cuanza Norte': ['Ndalatando', 'Ambaca', 'Banga', 'Bolongongo', 'Cambambe', 'Cazengo', 'Golungo Alto', 'Gonguembo', 'Lucala', 'Quiculungo', 'Samba Caju'],
+      'Cuanza Sul': ['Sumbe', 'Amboim', 'Cassongue', 'Cela', 'Conda', 'Ebo', 'Libolo', 'Mussende', 'Porto Amboim', 'Quibala', 'Quilenda', 'Seles'],
+      'Cunene': ['Ondjiva', 'Cahama', 'Cuanhama', 'Curoca', 'Namacunde', 'Ombadja'],
+      'Malanje': ['Malanje', 'Cacuso', 'Calandula', 'Cambundi-Catembo', 'Cangandala', 'Caombo', 'Carimo', 'Cuaba Nzogo', 'Cunda-Dia-Baze', 'Luquembo', 'Marimba', 'Massango', 'Mucari', 'Quela'],
+      'Moxico': ['Luena', 'Alto Zambeze', 'Bundas', 'Camanongue', 'Léua', 'Luacano', 'Luchazes', 'Lumeje', 'Moxico'],
+      'Namibe': ['Moçâmedes', 'Bibala', 'Camucuio', 'Tômbwa', 'Virei'],
+      'Uíge': ['Uíge', 'Alto Cauale', 'Ambuila', 'Bembe', 'Buengas', 'Bungo', 'Damba', 'Milunga', 'Mucaba', 'Negage', 'Puri', 'Quimbele', 'Quitexe', 'Sanza Pombo', 'Songo', 'Zombo'],
+      'Zaire': ['Mbanza Congo', 'Cuimba', 'Nóqui', 'Nzeto', 'Soyo', 'Tomboco'],
+      'Bengo': ['Caxito', 'Ambriz', 'Bula Atumba', 'Dande', 'Dembos', 'Nambuangongo', 'Pango Aluquém'],
+      'Lunda Norte': ['Dundo', 'Cambulo', 'Capenda-Camulemba', 'Caungula', 'Chitato', 'Cuango', 'Cuílo', 'Lóvua', 'Lubalo', 'Xá-Muteba'],
+      'Lunda Sul': ['Saurimo', 'Cacolo', 'Dala', 'Muconda']
+    };
+    
+    return municipalities[province] || [];
+  },
   taxRegimes: [
     'Regime Geral',
     'Regime Simplificado',
@@ -125,25 +148,46 @@ export const angolaLocalization = {
 // Validadores para documentos angolanos
 export const angolaValidators = {
   validateBI: (bi: string): boolean => {
-    return angolaLocalization.documents.types.BI.pattern.test(bi);
+    if (!bi) return true;
+    const cleanBI = bi.replace(/\s/g, '');
+    return angolaLocalization.documents.types.BI.pattern.test(cleanBI);
   },
   
   validateNIF: (nif: string): boolean => {
-    return angolaLocalization.documents.types.NIF.pattern.test(nif);
+    if (!nif) return true;
+    const cleanNIF = nif.replace(/\D/g, '');
+    return cleanNIF.length === 9 && /^\d{9}$/.test(cleanNIF);
   },
   
   validateAlvara: (alvara: string): boolean => {
+    if (!alvara) return true;
     return angolaLocalization.documents.types.ALVARA.pattern.test(alvara);
   },
   
   formatBI: (bi: string): string => {
-    // Remove espaços e converte para maiúsculas
-    return bi.replace(/\s/g, '').toUpperCase();
+    const clean = bi.replace(/\s/g, '').toUpperCase();
+    if (clean.length >= 9) {
+      const numbers = clean.replace(/[^0-9]/g, '');
+      const letters = clean.replace(/[^A-Z]/g, '');
+      if (numbers.length >= 12 && letters.length >= 2) {
+        return `${numbers.slice(0, 9)}${letters.slice(0, 2)}${numbers.slice(9, 12)}`;
+      }
+    }
+    return clean;
   },
   
   formatNIF: (nif: string): string => {
-    // Remove espaços e mantém apenas números
-    return nif.replace(/\D/g, '');
+    return nif.replace(/\D/g, '').slice(0, 9);
+  },
+  
+  formatPhone: (phone: string): string => {
+    const clean = phone.replace(/\D/g, '');
+    if (clean.startsWith('244')) {
+      return `+${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6, 9)}-${clean.slice(9, 12)}`;
+    } else if (clean.length === 9) {
+      return `+244-${clean.slice(0, 3)}-${clean.slice(3, 6)}-${clean.slice(6, 9)}`;
+    }
+    return phone;
   }
 };
 

@@ -24,12 +24,43 @@ class ApiError extends Error {
 // Função para simular delay de rede
 const simulateNetworkDelay = () => new Promise(resolve => setTimeout(resolve, 300))
 
+// Cache simples para melhorar performance
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+function getCachedData(key: string): any | null {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedData(key: string, data: any): void {
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
 async function apiRequest<T = any>(endpoint: string, options?: RequestInit): Promise<T> {
   await simulateNetworkDelay()
   
   try {
-    // Sempre usar mock data para demonstração
-    return getMockData(endpoint, options) as T
+    // Check cache first for GET requests
+    if (!options?.method || options.method === 'GET') {
+      const cached = getCachedData(endpoint);
+      if (cached) {
+        return cached as T;
+      }
+    }
+    
+    // Always use mock data for demonstration
+    const result = getMockData(endpoint, options) as T;
+    
+    // Cache GET requests
+    if (!options?.method || options.method === 'GET') {
+      setCachedData(endpoint, result);
+    }
+    
+    return result;
   } catch (error) {
     console.warn('API request failed, using mock data:', error)
     return getMockData(endpoint, options) as T
@@ -70,12 +101,30 @@ function handleCompaniesEndpoint(method: string, body: any, params: URLSearchPar
     case 'GET':
       let companies = [...mockCompanies]
       const search = params.get('search')
+      const industry = params.get('industry')
+      const size = params.get('size')
+      const province = params.get('province')
+      
       if (search) {
         companies = companies.filter(c => 
           c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.industry?.toLowerCase().includes(search.toLowerCase())
+          c.industry?.toLowerCase().includes(search.toLowerCase()) ||
+          c.email?.toLowerCase().includes(search.toLowerCase())
         )
       }
+      
+      if (industry && industry !== 'all') {
+        companies = companies.filter(c => c.industry === industry)
+      }
+      
+      if (size && size !== 'all') {
+        companies = companies.filter(c => c.size === size)
+      }
+      
+      if (province && province !== 'all') {
+        companies = companies.filter(c => (c as any).province === province)
+      }
+      
       return companies
     case 'POST':
       const newCompany: Company = {
@@ -84,7 +133,11 @@ function handleCompaniesEndpoint(method: string, body: any, params: URLSearchPar
         create_time: new Date().toISOString(),
         modify_time: new Date().toISOString(),
       }
-      mockCompanies.push(newCompany)
+      mockCompanies.unshift(newCompany)
+      
+      // Clear cache
+      cache.clear()
+      
       return newCompany
     case 'PUT':
       const companyId = parseInt(params.get('id') || '0')
@@ -95,6 +148,10 @@ function handleCompaniesEndpoint(method: string, body: any, params: URLSearchPar
           ...body,
           modify_time: new Date().toISOString(),
         }
+        
+        // Clear cache
+        cache.clear()
+        
         return mockCompanies[companyIndex]
       }
       throw new Error('Company not found')
@@ -103,6 +160,10 @@ function handleCompaniesEndpoint(method: string, body: any, params: URLSearchPar
       const deleteIndex = mockCompanies.findIndex(c => c.id === deleteCompanyId)
       if (deleteIndex !== -1) {
         mockCompanies.splice(deleteIndex, 1)
+        
+        // Clear cache
+        cache.clear()
+        
         return { success: true }
       }
       throw new Error('Company not found')
@@ -122,11 +183,12 @@ function handleContactsEndpoint(method: string, body: any, params: URLSearchPara
         contacts = contacts.filter(c => 
           c.first_name.toLowerCase().includes(search.toLowerCase()) ||
           c.last_name.toLowerCase().includes(search.toLowerCase()) ||
-          c.email?.toLowerCase().includes(search.toLowerCase())
+          c.email?.toLowerCase().includes(search.toLowerCase()) ||
+          c.job_title?.toLowerCase().includes(search.toLowerCase())
         )
       }
       
-      if (companyId) {
+      if (companyId && companyId !== 'all') {
         contacts = contacts.filter(c => c.company_id === parseInt(companyId))
       }
       
@@ -138,7 +200,11 @@ function handleContactsEndpoint(method: string, body: any, params: URLSearchPara
         create_time: new Date().toISOString(),
         modify_time: new Date().toISOString(),
       }
-      mockContacts.push(newContact)
+      mockContacts.unshift(newContact)
+      
+      // Clear cache
+      cache.clear()
+      
       return newContact
     case 'PUT':
       const contactId = parseInt(params.get('id') || '0')
@@ -149,6 +215,10 @@ function handleContactsEndpoint(method: string, body: any, params: URLSearchPara
           ...body,
           modify_time: new Date().toISOString(),
         }
+        
+        // Clear cache
+        cache.clear()
+        
         return mockContacts[contactIndex]
       }
       throw new Error('Contact not found')
@@ -157,6 +227,10 @@ function handleContactsEndpoint(method: string, body: any, params: URLSearchPara
       const deleteIndex = mockContacts.findIndex(c => c.id === deleteContactId)
       if (deleteIndex !== -1) {
         mockContacts.splice(deleteIndex, 1)
+        
+        // Clear cache
+        cache.clear()
+        
         return { success: true }
       }
       throw new Error('Contact not found')
@@ -171,16 +245,22 @@ function handleOpportunitiesEndpoint(method: string, body: any, params: URLSearc
       let opportunities = [...mockOpportunities]
       const search = params.get('search')
       const status = params.get('status')
+      const stageId = params.get('stage_id')
       
       if (search) {
         opportunities = opportunities.filter(o => 
           o.name.toLowerCase().includes(search.toLowerCase()) ||
-          o.description?.toLowerCase().includes(search.toLowerCase())
+          o.description?.toLowerCase().includes(search.toLowerCase()) ||
+          o.source?.toLowerCase().includes(search.toLowerCase())
         )
       }
       
-      if (status) {
+      if (status && status !== 'all') {
         opportunities = opportunities.filter(o => o.status === status)
+      }
+      
+      if (stageId && stageId !== 'all') {
+        opportunities = opportunities.filter(o => o.pipeline_stage_id === parseInt(stageId))
       }
       
       return opportunities
@@ -191,7 +271,11 @@ function handleOpportunitiesEndpoint(method: string, body: any, params: URLSearc
         create_time: new Date().toISOString(),
         modify_time: new Date().toISOString(),
       }
-      mockOpportunities.push(newOpportunity)
+      mockOpportunities.unshift(newOpportunity)
+      
+      // Clear cache
+      cache.clear()
+      
       return newOpportunity
     case 'PUT':
       const opportunityId = parseInt(params.get('id') || '0')
@@ -202,6 +286,10 @@ function handleOpportunitiesEndpoint(method: string, body: any, params: URLSearc
           ...body,
           modify_time: new Date().toISOString(),
         }
+        
+        // Clear cache
+        cache.clear()
+        
         return mockOpportunities[opportunityIndex]
       }
       throw new Error('Opportunity not found')
@@ -210,6 +298,10 @@ function handleOpportunitiesEndpoint(method: string, body: any, params: URLSearc
       const deleteIndex = mockOpportunities.findIndex(o => o.id === deleteOpportunityId)
       if (deleteIndex !== -1) {
         mockOpportunities.splice(deleteIndex, 1)
+        
+        // Clear cache
+        cache.clear()
+        
         return { success: true }
       }
       throw new Error('Opportunity not found')
@@ -224,14 +316,26 @@ function handleActivitiesEndpoint(method: string, body: any, params: URLSearchPa
       let activities = [...mockActivities]
       const type = params.get('type')
       const status = params.get('status')
+      const assignedUserId = params.get('assigned_user_id')
       
-      if (type) {
+      if (type && type !== 'all') {
         activities = activities.filter(a => a.type === type)
       }
       
-      if (status) {
+      if (status && status !== 'all') {
         activities = activities.filter(a => a.status === status)
       }
+      
+      if (assignedUserId && assignedUserId !== 'all') {
+        activities = activities.filter(a => a.assigned_user_id === parseInt(assignedUserId))
+      }
+      
+      // Sort by due date
+      activities.sort((a, b) => {
+        if (!a.due_date) return 1;
+        if (!b.due_date) return -1;
+        return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+      });
       
       return activities
     case 'POST':
@@ -241,7 +345,11 @@ function handleActivitiesEndpoint(method: string, body: any, params: URLSearchPa
         create_time: new Date().toISOString(),
         modify_time: new Date().toISOString(),
       }
-      mockActivities.push(newActivity)
+      mockActivities.unshift(newActivity)
+      
+      // Clear cache
+      cache.clear()
+      
       return newActivity
     case 'PUT':
       const activityId = parseInt(params.get('id') || '0')
@@ -252,6 +360,10 @@ function handleActivitiesEndpoint(method: string, body: any, params: URLSearchPa
           ...body,
           modify_time: new Date().toISOString(),
         }
+        
+        // Clear cache
+        cache.clear()
+        
         return mockActivities[activityIndex]
       }
       throw new Error('Activity not found')
@@ -260,6 +372,10 @@ function handleActivitiesEndpoint(method: string, body: any, params: URLSearchPa
       const deleteIndex = mockActivities.findIndex(a => a.id === deleteActivityId)
       if (deleteIndex !== -1) {
         mockActivities.splice(deleteIndex, 1)
+        
+        // Clear cache
+        cache.clear()
+        
         return { success: true }
       }
       throw new Error('Activity not found')
@@ -271,7 +387,7 @@ function handleActivitiesEndpoint(method: string, body: any, params: URLSearchPa
 function handlePipelineStagesEndpoint(method: string, body: any, params: URLSearchParams) {
   switch (method) {
     case 'GET':
-      return mockPipelineStages
+      return mockPipelineStages.sort((a, b) => a.stage_order - b.stage_order)
     default:
       return mockPipelineStages
   }
@@ -280,7 +396,7 @@ function handlePipelineStagesEndpoint(method: string, body: any, params: URLSear
 function handleUsersEndpoint(method: string, body: any, params: URLSearchParams) {
   switch (method) {
     case 'GET':
-      return mockUsers
+      return mockUsers.filter(u => u.is_active)
     default:
       return mockUsers
   }
@@ -310,5 +426,10 @@ export const api = {
   delete: <T = any>(endpoint: string) =>
     apiRequest<T>(endpoint, { method: "DELETE" }),
 }
+
+// Clear cache function
+export const clearApiCache = () => {
+  cache.clear();
+};
 
 export { ApiError }

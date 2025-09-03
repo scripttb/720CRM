@@ -26,6 +26,7 @@ import { InvoiceDialog } from './InvoiceDialog';
 import { CreditNoteDialog } from './CreditNoteDialog';
 import { PaymentReceiptDialog } from './PaymentReceiptDialog';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
+import { useBilling } from '@/hooks/use-billing';
 
 export function BillingDashboard() {
   const [activeTab, setActiveTab] = useState('proformas');
@@ -34,17 +35,19 @@ export function BillingDashboard() {
   const [creditNoteDialogOpen, setCreditNoteDialogOpen] = useState(false);
   const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
 
-  // Mock statistics - em produção, estes dados viriam da API
-  const stats = {
-    totalInvoiced: 2450000,
-    totalPaid: 1890000,
-    pendingPayments: 560000,
-    documentsThisMonth: 47,
-    proformasCount: 12,
-    invoicesCount: 23,
-    creditNotesCount: 3,
-    receiptsCount: 19
-  };
+  const {
+    proformas,
+    invoices,
+    creditNotes,
+    paymentReceipts,
+    getStatistics,
+    createProforma,
+    createInvoice,
+    createCreditNote,
+    createPaymentReceipt
+  } = useBilling();
+
+  const stats = getStatistics();
 
   const handleQuickAction = (action: string) => {
     switch (action) {
@@ -64,6 +67,42 @@ export function BillingDashboard() {
         setActiveTab('receipts');
         setReceiptDialogOpen(true);
         break;
+    }
+  };
+
+  const handleProformaSaved = async (data: any) => {
+    try {
+      await createProforma(data);
+      setProformaDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving proforma:', error);
+    }
+  };
+
+  const handleInvoiceSaved = async (data: any) => {
+    try {
+      await createInvoice(data);
+      setInvoiceDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+    }
+  };
+
+  const handleCreditNoteSaved = async (data: any) => {
+    try {
+      await createCreditNote(data);
+      setCreditNoteDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving credit note:', error);
+    }
+  };
+
+  const handleReceiptSaved = async (data: any) => {
+    try {
+      await createPaymentReceipt(data);
+      setReceiptDialogOpen(false);
+    } catch (error) {
+      console.error('Error saving receipt:', error);
     }
   };
 
@@ -235,40 +274,28 @@ export function BillingDashboard() {
         open={proformaDialogOpen}
         onOpenChange={setProformaDialogOpen}
         proforma={null}
-        onSave={() => {
-          setProformaDialogOpen(false);
-          toast.success('Proforma criada com sucesso');
-        }}
+        onSave={handleProformaSaved}
       />
 
       <InvoiceDialog
         open={invoiceDialogOpen}
         onOpenChange={setInvoiceDialogOpen}
         invoice={null}
-        onSave={() => {
-          setInvoiceDialogOpen(false);
-          toast.success('Fatura criada com sucesso');
-        }}
+        onSave={handleInvoiceSaved}
       />
 
       <CreditNoteDialog
         open={creditNoteDialogOpen}
         onOpenChange={setCreditNoteDialogOpen}
         creditNote={null}
-        onSave={() => {
-          setCreditNoteDialogOpen(false);
-          toast.success('Nota de crédito criada com sucesso');
-        }}
+        onSave={handleCreditNoteSaved}
       />
 
       <PaymentReceiptDialog
         open={receiptDialogOpen}
         onOpenChange={setReceiptDialogOpen}
         paymentReceipt={null}
-        onSave={() => {
-          setReceiptDialogOpen(false);
-          toast.success('Recibo criado com sucesso');
-        }}
+        onSave={handleReceiptSaved}
       />
     </div>
   );

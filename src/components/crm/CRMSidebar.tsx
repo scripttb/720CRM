@@ -80,32 +80,36 @@ const navigation = [
 const quickActions = [
   {
     name: 'Nova Empresa',
-    href: '/dashboard/companies/new',
+    action: 'company',
     icon: Building2,
   },
   {
     name: 'Novo Contacto',
-    href: '/dashboard/contacts/new',
+    action: 'contact',
     icon: Users,
   },
   {
     name: 'Nova Oportunidade',
-    href: '/dashboard/opportunities/new',
+    action: 'opportunity',
     icon: Target,
   },
   {
     name: 'Nova Actividade',
-    href: '/dashboard/activities/new',
+    action: 'activity',
     icon: Calendar,
   },
   {
     name: 'Nova Fatura',
-    href: '/dashboard/billing/invoices/new',
+    action: 'invoice',
     icon: Receipt,
   },
 ];
 
-export function CRMSidebar({ className }: SidebarProps) {
+interface CRMSidebarProps extends SidebarProps {
+  onQuickAction?: (action: string) => void;
+}
+
+export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
   const location = useLocation();
   const pathname = location.pathname;
   const [collapsed, setCollapsed] = useState(false);
@@ -148,16 +152,16 @@ export function CRMSidebar({ className }: SidebarProps) {
               </h3>
               <div className="space-y-1">
                 {quickActions.map((action) => (
-                  <Link key={action.name} href={action.href}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full justify-start gap-2 h-8"
-                    >
-                      <Plus className="h-3 w-3" />
-                      {action.name}
-                    </Button>
-                  </Link>
+                  <Button
+                    key={action.name}
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start gap-2 h-8"
+                    onClick={() => onQuickAction?.(action.action)}
+                  >
+                    <Plus className="h-3 w-3" />
+                    {action.name}
+                  </Button>
                 ))}
               </div>
               <Separator className="my-4" />

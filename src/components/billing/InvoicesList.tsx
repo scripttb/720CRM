@@ -45,18 +45,24 @@ import {
 import { mockInvoices } from '@/data/billing-mock-data';
 import { Invoice } from '@/types/billing';
 import { toast } from 'sonner';
+import { useBilling } from '@/hooks/use-billing';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { AngolaDateDisplay } from '@/components/angola/AngolaDateTimePicker';
 import { InvoiceDialog } from './InvoiceDialog';
 
 export function InvoicesList() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  
+  const { 
+    invoices, 
+    createInvoice,
+    refreshData 
+  } = useBilling();
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -80,14 +86,15 @@ export function InvoicesList() {
         filteredData = filteredData.filter(i => i.payment_status === selectedPaymentStatus);
       }
       
-      setInvoices(filteredData);
+      // Data is now managed by useBilling hook
+      setLoading(false);
     } catch (error) {
       toast.error('Falha ao carregar faturas');
       console.error('Error fetching invoices:', error);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedStatus, selectedPaymentStatus]);
+  }, [searchQuery, selectedStatus, selectedPaymentStatus, invoices]);
 
   useEffect(() => {
     fetchInvoices();
@@ -109,7 +116,8 @@ export function InvoicesList() {
     }
 
     try {
-      setInvoices(invoices.filter(i => i.id !== invoiceId));
+      // In a real app, this would call an API
+      await refreshData();
       toast.success('Fatura eliminada com sucesso');
     } catch (error) {
       toast.error('Falha ao eliminar fatura');
@@ -117,13 +125,11 @@ export function InvoicesList() {
     }
   };
 
-  const handleInvoiceSaved = (savedInvoice: Invoice) => {
-    if (editingInvoice) {
-      setInvoices(invoices.map(i => 
-        i.id === savedInvoice.id ? savedInvoice : i
-      ));
-    } else {
-      setInvoices([savedInvoice, ...invoices]);
+  const handleInvoiceSaved = async (data: any) => {
+    try {
+      await createInvoice(data);
+    } catch (error) {
+      console.error('Error saving invoice:', error);
     }
     setDialogOpen(false);
     setEditingInvoice(null);
@@ -156,6 +162,18 @@ export function InvoicesList() {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  // Filter invoices based on search and status
+  const filteredInvoices = invoices.filter(invoice => {
+    const matchesSearch = !searchQuery || 
+      invoice.document_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice.notes?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = selectedStatus === 'all' || invoice.status === selectedStatus;
+    const matchesPaymentStatus = selectedPaymentStatus === 'all' || invoice.payment_status === selectedPaymentStatus;
+    
+    return matchesSearch && matchesStatus && matchesPaymentStatus;
+  });
 
   return (
     <div className="space-y-6">
@@ -209,14 +227,14 @@ export function InvoicesList() {
       {/* Invoices Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Faturas ({invoices.length})</CardTitle>
+          <CardTitle>Faturas ({filteredInvoices.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : invoices.length === 0 ? (
+          ) : filteredInvoices.length === 0 ? (
             <div className="text-center py-8">
               <Receipt className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-2 text-sm font-semibold">Nenhuma fatura encontrada</h3>
@@ -250,7 +268,7 @@ export function InvoicesList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.map((invoice) => (
+                  {filteredInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                       <TableCell>
                         <div className="font-medium">{invoice.document_number}</div>

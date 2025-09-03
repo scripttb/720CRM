@@ -25,12 +25,15 @@ import {
   Loader2
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useBilling } from '@/hooks/use-billing';
 
 export function SafTExport() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  
+  const { exportSafT } = useBilling();
 
   const handleExport = async () => {
     if (!startDate || !endDate) {
@@ -45,140 +48,9 @@ export function SafTExport() {
 
     setLoading(true);
     try {
-      // Simulate SAF-T generation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Create comprehensive SAF-T XML content
-      const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
-<AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:AO_1.01_01" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <Header>
-    <AuditFileVersion>1.01_01</AuditFileVersion>
-    <CompanyID>5417000001</CompanyID>
-    <TaxRegistrationNumber>5417000001</TaxRegistrationNumber>
-    <TaxAccountingBasis>F</TaxAccountingBasis>
-    <CompanyName>Sistema CRM Angola Lda</CompanyName>
-    <BusinessName>CRM Angola</BusinessName>
-    <CompanyAddress>
-      <BuildingNumber>123</BuildingNumber>
-      <StreetName>Rua da Independência</StreetName>
-      <AddressDetail>Rua da Independência, 123</AddressDetail>
-      <City>Luanda</City>
-      <PostalCode>1000</PostalCode>
-      <Region>Luanda</Region>
-      <Country>AO</Country>
-    </CompanyAddress>
-    <FiscalYear>${new Date(startDate).getFullYear()}</FiscalYear>
-    <StartDate>${startDate}</StartDate>
-    <EndDate>${endDate}</EndDate>
-    <CurrencyCode>AOA</CurrencyCode>
-    <DateCreated>${new Date().toISOString().split('T')[0]}</DateCreated>
-    <TaxEntity>Global</TaxEntity>
-    <ProductCompanyTaxID>5417000001</ProductCompanyTaxID>
-    <SoftwareCertificateNumber>n31.1/AGT20</SoftwareCertificateNumber>
-    <ProductID>Sistema CRM Angola</ProductID>
-    <ProductVersion>1.0</ProductVersion>
-  </Header>
-  <MasterFiles>
-    <Customer>
-      <CustomerID>1</CustomerID>
-      <AccountID>C001</AccountID>
-      <CustomerTaxID>5417000001</CustomerTaxID>
-      <CompanyName>Sonangol EP</CompanyName>
-      <BillingAddress>
-        <AddressDetail>Rua Rainha Ginga, 29/31</AddressDetail>
-        <City>Luanda</City>
-        <PostalCode>1316</PostalCode>
-        <Country>AO</Country>
-      </BillingAddress>
-      <Telephone>+244-222-640-000</Telephone>
-      <Email>geral@sonangol.co.ao</Email>
-      <SelfBillingIndicator>0</SelfBillingIndicator>
-    </Customer>
-    <Product>
-      <ProductType>S</ProductType>
-      <ProductCode>CONS-001</ProductCode>
-      <ProductDescription>Consultoria Empresarial</ProductDescription>
-    </Product>
-    <TaxTable>
-      <TaxTableEntry>
-        <TaxType>IVA</TaxType>
-        <TaxCountryRegion>AO</TaxCountryRegion>
-        <TaxCode>NOR</TaxCode>
-        <Description>Taxa Normal</Description>
-        <TaxPercentage>14.00</TaxPercentage>
-      </TaxTableEntry>
-    </TaxTable>
-  </MasterFiles>
-  <SourceDocuments>
-    <SalesInvoices>
-      <NumberOfEntries>2</NumberOfEntries>
-      <TotalDebit>114000.00</TotalDebit>
-      <TotalCredit>0.00</TotalCredit>
-      <Invoice>
-        <InvoiceNo>FT 2024/000001</InvoiceNo>
-        <ATCUD>FT-1-1706180400000</ATCUD>
-        <DocumentStatus>
-          <InvoiceStatus>N</InvoiceStatus>
-          <InvoiceStatusDate>${new Date().toISOString().split('T')[0]}</InvoiceStatusDate>
-          <SourceID>1</SourceID>
-          <SourceBilling>P</SourceBilling>
-        </DocumentStatus>
-        <Hash>abc123def456ghi789</Hash>
-        <HashControl>1</HashControl>
-        <InvoiceDate>${startDate}</InvoiceDate>
-        <InvoiceType>FT</InvoiceType>
-        <SpecialRegimes>
-          <SelfBillingIndicator>0</SelfBillingIndicator>
-          <CashVATSchemeIndicator>0</CashVATSchemeIndicator>
-          <ThirdPartiesBillingIndicator>0</ThirdPartiesBillingIndicator>
-        </SpecialRegimes>
-        <SourceID>1</SourceID>
-        <SystemEntryDate>${new Date().toISOString()}</SystemEntryDate>
-        <CustomerID>1</CustomerID>
-        <Line>
-          <LineNumber>1</LineNumber>
-          <ProductCode>CONS-001</ProductCode>
-          <ProductDescription>Consultoria Empresarial</ProductDescription>
-          <Quantity>1</Quantity>
-          <UnitOfMeasure>UN</UnitOfMeasure>
-          <UnitPrice>100000.00</UnitPrice>
-          <TaxPointDate>${startDate}</TaxPointDate>
-          <Description>Consultoria em sistemas de gestão</Description>
-          <CreditAmount>100000.00</CreditAmount>
-          <Tax>
-            <TaxType>IVA</TaxType>
-            <TaxCountryRegion>AO</TaxCountryRegion>
-            <TaxCode>NOR</TaxCode>
-            <TaxPercentage>14.00</TaxPercentage>
-            <TaxAmount>14000.00</TaxAmount>
-          </Tax>
-        </Line>
-        <DocumentTotals>
-          <TaxPayable>14000.00</TaxPayable>
-          <NetTotal>100000.00</NetTotal>
-          <GrossTotal>114000.00</GrossTotal>
-        </DocumentTotals>
-      </Invoice>
-    </SalesInvoices>
-  </SourceDocuments>
-</AuditFile>`;
-
-      // Create and download file
-      const blob = new Blob([xmlContent], { type: 'application/xml' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.style.display = 'none';
-      a.href = url;
-      a.download = `SAFT_AO_${startDate}_${endDate}.xml`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.success('SAF-T exportado com sucesso');
+      await exportSafT(startDate, endDate);
       setOpen(false);
     } catch (error) {
-      toast.error('Erro ao exportar SAF-T');
       console.error('SAF-T export error:', error);
     } finally {
       setLoading(false);

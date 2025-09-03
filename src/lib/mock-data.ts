@@ -462,24 +462,34 @@ export const mockUsers: User[] = [
 ]
 
 export function getMockDashboardStats(): DashboardStats {
-  const wonOpportunities = 15
-  const lostOpportunities = 8
-  const totalOpportunities = mockOpportunities.length + wonOpportunities + lostOpportunities
-  const totalRevenue = mockOpportunities
+  // Calculate real stats from current data
+  const openOpportunities = mockOpportunities.filter(opp => opp.status === 'open').length;
+  const wonOpportunities = mockOpportunities.filter(opp => opp.status === 'won').length + 12; // Add some historical wins
+  const lostOpportunities = mockOpportunities.filter(opp => opp.status === 'lost').length + 5; // Add some historical losses
+  const totalOpportunities = openOpportunities + wonOpportunities + lostOpportunities;
+  
+  // Calculate revenue from won opportunities + some historical revenue
+  const currentRevenue = mockOpportunities
     .filter(opp => opp.status === 'won')
-    .reduce((sum, opp) => sum + (opp.value || 0), 0) + 95000000
+    .reduce((sum, opp) => sum + (opp.value || 0), 0);
+  const historicalRevenue = 85000000; // Historical closed deals
+  const totalRevenue = currentRevenue + historicalRevenue;
+  
+  // Calculate activities this week
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const activitiesThisWeek = mockActivities.filter(activity => 
+    new Date(activity.create_time) > oneWeekAgo
+  ).length + 8; // Add some additional activities
 
   return {
     totalCompanies: mockCompanies.length,
     totalContacts: mockContacts.length,
-    totalOpportunities,
+    totalOpportunities: totalOpportunities,
     totalRevenue,
-    openOpportunities: mockOpportunities.filter(opp => opp.status === 'open').length,
+    openOpportunities,
     wonOpportunities,
     lostOpportunities,
-    activitiesThisWeek: mockActivities.filter(activity => 
-      new Date(activity.create_time) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    ).length,
+    activitiesThisWeek,
     conversionRate: (wonOpportunities / totalOpportunities) * 100,
     averageDealSize: totalRevenue / (wonOpportunities || 1),
   }
