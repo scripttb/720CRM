@@ -45,20 +45,39 @@ export function SafTExport() {
 
     setLoading(true);
     try {
-      const params = new URLSearchParams({
-        start_date: startDate,
-        end_date: endDate,
-        user_id: '1' // Obter do contexto de autenticação
-      });
-
-      const response = await fetch(`/next_api/billing/saft-export?${params}`);
+      // Simulate SAF-T generation
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      if (!response.ok) {
-        throw new Error('Falha ao gerar SAF-T');
-      }
+      // Create mock XML content
+      const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>
+<AuditFile xmlns="urn:OECD:StandardAuditFile-Tax:AO_1.01_01">
+  <Header>
+    <AuditFileVersion>1.01_01</AuditFileVersion>
+    <CompanyID>5417000001</CompanyID>
+    <TaxRegistrationNumber>5417000001</TaxRegistrationNumber>
+    <TaxAccountingBasis>F</TaxAccountingBasis>
+    <CompanyName>Sistema CRM Angola</CompanyName>
+    <CompanyAddress>
+      <AddressDetail>Rua da Independência, 123</AddressDetail>
+      <City>Luanda</City>
+      <Country>AO</Country>
+    </CompanyAddress>
+    <FiscalYear>${new Date(startDate).getFullYear()}</FiscalYear>
+    <StartDate>${startDate}</StartDate>
+    <EndDate>${endDate}</EndDate>
+    <CurrencyCode>AOA</CurrencyCode>
+    <DateCreated>${new Date().toISOString().split('T')[0]}</DateCreated>
+    <TaxEntity>Global</TaxEntity>
+    <ProductCompanyTaxID>5417000001</ProductCompanyTaxID>
+    <SoftwareCertificateNumber>n31.1/AGT20</SoftwareCertificateNumber>
+    <ProductID>Sistema CRM Angola</ProductID>
+    <ProductVersion>1.0</ProductVersion>
+  </Header>
+  <!-- Dados de exemplo - em produção seria gerado dinamicamente -->
+</AuditFile>`;
 
-      // Descarregar o arquivo XML
-      const blob = await response.blob();
+      // Create and download file
+      const blob = new Blob([xmlContent], { type: 'application/xml' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -79,7 +98,7 @@ export function SafTExport() {
     }
   };
 
-  // Definir datas padrão (mês actual)
+  // Set default dates (current month)
   const currentDate = new Date();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
@@ -107,7 +126,7 @@ export function SafTExport() {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Informações sobre SAF-T */}
+          {/* SAF-T Information */}
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -149,7 +168,7 @@ export function SafTExport() {
             </CardContent>
           </Card>
 
-          {/* Seleção de Período */}
+          {/* Date Selection */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
