@@ -10,29 +10,22 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+      setError(null);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check for existing session
-    const savedUser = localStorage.getItem('crm_user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        console.error('Error parsing saved user:', error);
-        localStorage.removeItem('crm_user');
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      if (!isSupabaseConfigured()) {
-        return mockLogin(email, password);
+      // Try mock authentication first (since database might not be set up)
+      const mockUser = mockUsers.find(u => u.email === email && u.password === password);
+      if (mockUser) {
+        const user: User = {
+          id: mockUser.id,
+          email: mockUser.email,
+          firstName: mockUser.firstName,
+          lastName: mockUser.lastName,
+          role: mockUser.role,
+          avatar: mockUser.avatar
+        };
+        setUser(user);
+        localStorage.setItem('crm_user', JSON.stringify(user));
+        return;
       }
 
       // Try Supabase authentication first, fallback to mock if it fails
@@ -68,22 +61,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             last_login: new Date().toISOString(),
             create_time: data.user.created_at,
             modify_time: new Date().toISOString(),
-          };
+      // Try Supabase authentication as fallback
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
 
+        if (error) throw error;
+
+        if (data.user) {
+          const user: User = {
+            id: data.user.id,
+            email: data.user.email || '',
+            firstName: data.user.user_metadata?.firstName || 'User',
+            lastName: data.user.user_metadata?.lastName || '',
+            role: data.user.user_metadata?.role || 'sales_rep',
+            avatar: data.user.user_metadata?.avatar
+          };
           setUser(user);
           localStorage.setItem('crm_user', JSON.stringify(user));
-          return true;
         }
-
-        return false;
       } catch (supabaseError) {
-        console.warn('Supabase connection failed, falling back to mock login:', supabaseError);
-        return mockLogin(email, password);
+        console.warn('Supabase authentication failed:', supabaseError);
+        throw new Error('Credenciais inválidas. Use: demo@crm.com / password');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
+      const errorMessage = error instanceof Error ? error.message : 'Erro no login';
+      console.error('Login error:', errorMessage);
+      setError(errorMessage);
+      throw new Error(errorMessage);
   };
 
   const mockLogin = (email: string, password: string): boolean => {

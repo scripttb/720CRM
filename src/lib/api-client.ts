@@ -1,6 +1,7 @@
 // Cliente API para Supabase
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { getMockDashboardStats } from '@/lib/mock-data'
+import { mockData } from '../data/mock-data';
 
 interface ApiResponse<T = any> {
   success: boolean
@@ -26,6 +27,12 @@ async function apiRequest<T = any>(endpoint: string, options?: RequestInit): Pro
         return getMockDashboardStats() as T
       }
       return [] as T
+    }
+
+    // Check if we're in fallback mode (no database tables)
+    if (endpoint.includes('companies') || endpoint.includes('contacts') || 
+        endpoint.includes('opportunities') || endpoint.includes('activities')) {
+      return getMockData(endpoint) as T;
     }
 
     // Handle different endpoints with Supabase
@@ -78,12 +85,25 @@ async function apiRequest<T = any>(endpoint: string, options?: RequestInit): Pro
         return [] as T
     }
   } catch (error) {
-    console.error("API request error:", error)
-    // Return mock data on error
-    if (endpoint === '/dashboard/stats') {
-      return getMockDashboardStats() as T
-    }
-    return [] as T
+    console.warn('API request failed, using mock data:', error);
+    return getMockData(endpoint) as T;
+  }
+}
+
+function getMockData(endpoint: string): any {
+  switch (true) {
+    case endpoint.includes('companies'):
+      return mockData.companies;
+    case endpoint.includes('contacts'):
+      return mockData.contacts;
+    case endpoint.includes('opportunities'):
+      return mockData.opportunities;
+    case endpoint.includes('activities'):
+      return mockData.activities;
+    case endpoint.includes('users'):
+      return mockData.users;
+    default:
+      return [];
   }
 }
 

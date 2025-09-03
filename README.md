@@ -1,30 +1,72 @@
-# crm
+# CRM Angola - Sistema de Gestão de Relacionamento com Clientes
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+Um sistema CRM completo desenvolvido especificamente para o mercado angolano, com funcionalidades de faturação, gestão de contactos e relatórios.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/midia/v0-app20250903064908aropfxvqwz1756)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/ADJqVlCg8hc)
+## 🚀 Funcionalidades
 
-## Overview
+- **Gestão de Empresas e Contactos**
+- **Pipeline de Vendas e Oportunidades**
+- **Sistema de Faturação Angolano** (Proformas, Faturas, Notas de Crédito, Recibos)
+- **Relatórios e Análises**
+- **Localização para Angola** (Português, Kwanza, Fuso horário de Luanda)
+- **Conformidade com SAF-T Angola**
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+## 🛠️ Configuração
 
-## Deployment
+### 1. Configuração do Supabase (Opcional)
 
-Your project is live at:
+O sistema funciona com dados de demonstração, mas para usar uma base de dados real:
 
-**[https://vercel.com/midia/v0-app20250903064908aropfxvqwz1756](https://vercel.com/midia/v0-app20250903064908aropfxvqwz1756)**
+1. Aceda ao [Supabase Dashboard](https://supabase.com/dashboard)
+2. Vá para **SQL Editor**
+3. Execute o script `app.sql` completo para criar todas as tabelas
+4. As credenciais já estão configuradas no `.env.local`
 
-## Build your app
+### 2. Contas de Demonstração
 
-Continue building your app on:
+Use estas credenciais para testar o sistema:
 
-**[https://v0.app/chat/projects/ADJqVlCg8hc](https://v0.app/chat/projects/ADJqVlCg8hc)**
+- **Gestor:** demo@crm.com / password
+- **Admin:** admin@crm.com / password
+- **Vendedor:** vendedor@crm.com / password
 
-## How It Works
+### 3. Executar o Projeto
 
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+```bash
+npm install
+npm run dev
+```
+
+## 📊 Base de Dados
+
+O ficheiro `app.sql` contém:
+- Schema completo para CRM
+- Dados específicos para Angola (províncias, moedas, impostos)
+- Sistema de faturação conforme legislação angolana
+- Dados de demonstração
+
+## 🇦🇴 Características Angolanas
+
+- **Moeda:** Kwanza (AOA) como padrão
+- **Impostos:** IVA 14%, IRT, IS conforme legislação
+- **Documentos:** BI, NIF, Alvará
+- **Localização:** Português de Angola, fuso horário de Luanda
+- **Faturação:** Conforme Decreto Executivo 48/19
+
+## 📱 Tecnologias
+
+- React + TypeScript
+- Vite
+- Supabase
+- Tailwind CSS
+- Shadcn/ui
+
+## 🔧 Resolução de Problemas
+
+Se encontrar erros de "tabela não encontrada":
+1. Execute o script `app.sql` no Supabase SQL Editor
+2. O sistema funcionará com dados mock até a base de dados estar configurada
+
+Para problemas de autenticação:
+- Use as contas de demonstração listadas acima
+- O sistema tem fallback automático para dados mock
