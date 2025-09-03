@@ -48,6 +48,7 @@ import { useContacts } from '@/hooks/use-contacts';
 import { useCompanies } from '@/hooks/use-companies';
 import { toast } from 'sonner';
 import { ContactDialog } from './ContactDialog';
+import { ResponsiveTable, MobileTable, MobileCard } from '@/components/ui/mobile-table';
 
 export function ContactsList() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -283,6 +284,128 @@ export function ContactsList() {
         </CardContent>
       </Card>
 
+      {/* Mobile View */}
+      <div className="md:hidden">
+        <Card>
+          <CardHeader>
+            <CardTitle>Contactos ({contacts.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <MobileTable
+                data={contacts}
+                renderCard={(contact) => (
+                  <MobileCard key={contact.id}>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={contact.avatar_url} />
+                          <AvatarFallback>
+                            {getContactInitials(contact.first_name, contact.last_name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            {contact.first_name} {contact.last_name}
+                            {contact.is_primary && (
+                              <Badge variant="secondary" className="ml-2 text-xs">
+                                Principal
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {contact.job_title || 'Cargo não especificado'}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditContact(contact)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteContact(contact.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                          <span>{getCompanyName(contact.company_id)}</span>
+                        </div>
+                        
+                        {contact.department && (
+                          <div className="text-sm text-muted-foreground">
+                            Departamento: {contact.department}
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {contact.email && (
+                          <a href={`mailto:${contact.email}`} className="flex items-center gap-1 text-xs text-blue-600">
+                            <Mail className="h-3 w-3" />
+                            Email
+                          </a>
+                        )}
+                        {contact.phone && (
+                          <a href={`tel:${contact.phone}`} className="flex items-center gap-1 text-xs text-blue-600">
+                            <Phone className="h-3 w-3" />
+                            Telefone
+                          </a>
+                        )}
+                      </div>
+                      
+                      {(contact as any).bi_number && (
+                        <div className="text-xs">
+                          <div className="flex items-center gap-1">
+                            <FileText className="h-3 w-3 text-muted-foreground" />
+                            <span className="font-mono">BI: {(contact as any).bi_number}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </MobileCard>
+                )}
+                emptyState={
+                  <div className="text-center py-8">
+                    <User className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-2 text-sm font-semibold">Nenhum contacto encontrado</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {searchQuery || filters.company_id !== 'all' 
+                        ? 'Tente ajustar a sua pesquisa ou filtros'
+                        : 'Comece por criar o seu primeiro contacto'
+                      }
+                    </p>
+                    {!searchQuery && filters.company_id === 'all' && (
+                      <Button onClick={handleCreateContact} className="mt-4">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Adicionar Contacto
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
       {/* Contact Dialog */}
       <ContactDialog
         open={dialogOpen}

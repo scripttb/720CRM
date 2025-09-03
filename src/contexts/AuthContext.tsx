@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { User } from '@/types/crm';
 import { mockUsers } from '@/lib/mock-data';
+import { useNotifications } from '@/hooks/use-notifications';
 
 interface AuthContextType {
   user: User | null;
@@ -16,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     // Check for existing session
@@ -150,6 +152,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         setUser(user);
         localStorage.setItem('crm_user', JSON.stringify(user));
+        
+        // Add welcome notification
+        addNotification({
+          type: 'success',
+          title: 'Bem-vindo ao Sistema CRM',
+          message: `Olá ${user.first_name}, sessão iniciada com sucesso!`,
+          autoDelete: true,
+          priority: 'low'
+        });
       }
       return true;
     }

@@ -49,6 +49,7 @@ import { Document } from '@/types/crm';
 import { DocumentUpload } from './DocumentUpload';
 import { mockCompanies, mockContacts, mockOpportunities } from '@/lib/mock-data';
 import { toast } from 'sonner';
+import { ResponsiveTable, MobileTable, MobileCard } from '@/components/ui/mobile-table';
 
 // Mock data for documents since we don't have API yet
 const mockDocuments: Document[] = [
@@ -111,6 +112,18 @@ export function DocumentsList() {
   const [selectedVisibility, setSelectedVisibility] = useState<string>('all');
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
+  // Load documents from localStorage
+  useEffect(() => {
+    const savedDocuments = localStorage.getItem('crm_documents');
+    if (savedDocuments) {
+      try {
+        const parsed = JSON.parse(savedDocuments);
+        setDocuments(prev => [...parsed, ...prev]);
+      } catch (error) {
+        console.error('Error loading saved documents:', error);
+      }
+    }
+  }, []);
   const fetchDocuments = useCallback(async () => {
     try {
       setLoading(true);
@@ -147,6 +160,29 @@ export function DocumentsList() {
     setDocuments(prev => [document, ...prev]);
     toast.success('Documento carregado com sucesso');
   };
+
+  const handleDownloadDocument = (document: Document) => {
+    if (document.file_path.startsWith('blob:')) {
+      // For uploaded files, trigger download
+      const a = document.createElement('a');
+      a.href = document.file_path;
+      a.download = document.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      toast.info('Download simulado - arquivo não disponível');
+    }
+  };
+
+  const handleViewDocument = (document: Document) => {
+    if (document.file_path.startsWith('blob:')) {
+      window.open(document.file_path, '_blank');
+    } else {
+      toast.info('Visualização simulada - arquivo não disponível');
+    }
+  };
+
   const handleDeleteDocument = async (documentId: number) => {
     if (!confirm('Tem a certeza que deseja eliminar este documento?')) {
       return;
@@ -154,6 +190,12 @@ export function DocumentsList() {
 
     try {
       setDocuments(documents.filter(d => d.id !== documentId));
+      
+      // Remove from localStorage
+      const savedDocuments = JSON.parse(localStorage.getItem('crm_documents') || '[]');
+      const updatedDocuments = savedDocuments.filter((d: Document) => d.id !== documentId);
+      localStorage.setItem('crm_documents', JSON.stringify(updatedDocuments));
+      
       toast.success('Documento eliminado com sucesso');
     } catch (error) {
       toast.error('Falha ao eliminar documento');
@@ -320,11 +362,11 @@ export function DocumentsList() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acções</DropdownMenuLabel>
                             <DropdownMenuItem>
-                              <Eye className="mr-2 h-4 w-4" />
+                              <Eye className="mr-2 h-4 w-4" onClick={() => handleViewDocument(document)} />
                               Ver
                             </DropdownMenuItem>
                             <DropdownMenuItem>
-                              <Download className="mr-2 h-4 w-4" />
+                              <Download className="mr-2 h-4 w-4" onClick={() => handleDownloadDocument(document)} />
                               Descarregar
                             </DropdownMenuItem>
                             <DropdownMenuItem>
@@ -351,6 +393,107 @@ export function DocumentsList() {
         </CardContent>
       </Card>
 
+      {/* Mobile View */}
+      <div className="md:hidden">
+        <Card>
+          <CardHeader>
+            <CardTitle>Documentos ({documents.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <MobileTable
+                data={documents}
+                renderCard={(document) => (
+                  <MobileCard key={document.id}>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          {getFileIcon(document.mime_type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{document.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {formatFileSize(document.file_size)} • {formatDateTime(document.create_time)}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleViewDocument(document)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleDownloadDocument(document)}>
+                              <Download className="mr-2 h-4 w-4" />
+                              Descarregar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteDocument(document.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                          {document.mime_type?.split('/')[1]?.toUpperCase() || 'Desconhecido'}
+                        </Badge>
+                        {document.is_public ? (
+                          <Badge variant="outline" className="text-green-600">Público</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-600">Privado</Badge>
+                        )}
+                      </div>
+                      
+                      {document.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                          {document.description}
+                        </p>
+                      )}
+                      
+                      {document.company_id && (
+                        <div className="text-xs text-muted-foreground">
+                          Empresa ID: {document.company_id}
+                        </div>
+                      )}
+                    </div>
+                  </MobileCard>
+                )}
+                emptyState={
+                  <div className="text-center py-8">
+                    <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-2 text-sm font-semibold">Nenhum documento encontrado</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {searchQuery
+                        ? 'Tente ajustar os termos de pesquisa'
+                        : 'Comece por carregar o seu primeiro documento'
+                      }
+                    </p>
+                    {!searchQuery && (
+                      <Button onClick={() => setUploadDialogOpen(true)} className="mt-4">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Carregar Documento
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
       {/* Document Upload Dialog */}
       <DocumentUpload
         open={uploadDialogOpen}

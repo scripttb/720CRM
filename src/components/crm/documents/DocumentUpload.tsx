@@ -142,7 +142,7 @@ export function DocumentUpload({
   };
 
   const simulateUpload = async (): Promise<Document[]> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       let progress = 0;
       const interval = setInterval(() => {
         progress += Math.random() * 30;
@@ -150,30 +150,56 @@ export function DocumentUpload({
           progress = 100;
           clearInterval(interval);
           
-          // Create mock documents
-          const uploadedDocs = files.map((file, index) => ({
-            id: Date.now() + index,
-            name: formData.name || file.name,
-            file_path: `/documents/${file.name}`,
-            file_size: file.size,
-            mime_type: file.type,
-            company_id: formData.company_id,
-            contact_id: formData.contact_id,
-            opportunity_id: formData.opportunity_id,
-            uploaded_by_user_id: 1,
-            is_public: formData.is_public,
-            description: formData.description,
-            create_time: new Date().toISOString(),
-            modify_time: new Date().toISOString(),
-          }));
-          
-          resolve(uploadedDocs);
+          // Simulate real file upload
+          try {
+            const uploadedDocs = files.map((file, index) => {
+              // Create object URL for file preview
+              const fileUrl = URL.createObjectURL(file);
+              
+              return {
+                id: Date.now() + index,
+                name: formData.name || file.name,
+                file_path: fileUrl,
+                file_size: file.size,
+                mime_type: file.type,
+                company_id: formData.company_id,
+                contact_id: formData.contact_id,
+                opportunity_id: formData.opportunity_id,
+                uploaded_by_user_id: 1,
+                is_public: formData.is_public,
+                description: formData.description,
+                create_time: new Date().toISOString(),
+                modify_time: new Date().toISOString(),
+              };
+            });
+            
+            // Store files in localStorage for persistence
+            const existingFiles = JSON.parse(localStorage.getItem('crm_documents') || '[]');
+            const allFiles = [...uploadedDocs, ...existingFiles];
+            localStorage.setItem('crm_documents', JSON.stringify(allFiles));
+            
+            resolve(uploadedDocs);
+          } catch (error) {
+            reject(error);
+          }
         }
         setUploadProgress(Math.min(progress, 100));
       }, 200);
     });
   };
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    handleFileSelect({ target: { files: droppedFiles } } as any);
+  }, [handleFileSelect]);
   const handleUpload = async () => {
     if (files.length === 0) {
       toast.error('Selecione pelo menos um arquivo');
@@ -242,7 +268,11 @@ export function DocumentUpload({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Selecionar Arquivos</Label>
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+              <div 
+                className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors"
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
                 <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">

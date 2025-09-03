@@ -50,6 +50,7 @@ import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { useTranslation } from '@/lib/angola-translations';
 import { CompanyDialog } from './CompanyDialog';
+import { ResponsiveTable, MobileTable, MobileCard } from '@/components/ui/mobile-table';
 
 export function CompaniesList() {
   const { t } = useTranslation();
@@ -328,6 +329,146 @@ export function CompaniesList() {
         </CardContent>
       </Card>
 
+      {/* Mobile View */}
+      <div className="md:hidden">
+        <Card>
+          <CardHeader>
+            <CardTitle>{t('navigation.companies')} ({companies.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : (
+              <MobileTable
+                data={companies}
+                renderCard={(company) => (
+                  <MobileCard key={company.id}>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={company.logo_url} />
+                          <AvatarFallback>
+                            {getCompanyInitials(company.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="font-medium">{company.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {company.industry || 'Setor não especificado'}
+                          </div>
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditCompany(company)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              {t('actions.edit')}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteCompany(company.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {t('actions.delete')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {company.size && (
+                          <div>
+                            <span className="text-muted-foreground">Dimensão:</span>
+                            <Badge variant="outline" className="ml-1">{company.size}</Badge>
+                          </div>
+                        )}
+                        {company.employee_count && (
+                          <div>
+                            <span className="text-muted-foreground">Funcionários:</span>
+                            <span className="ml-1">{company.employee_count.toLocaleString()}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {company.annual_revenue && (
+                        <div className="text-sm">
+                          <span className="text-muted-foreground">Receita Anual:</span>
+                          <div className="font-medium">
+                            <KwanzaCurrencyDisplay amount={company.annual_revenue} />
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-wrap gap-2">
+                        {company.email && (
+                          <a href={`mailto:${company.email}`} className="flex items-center gap-1 text-xs text-blue-600">
+                            <Mail className="h-3 w-3" />
+                            Email
+                          </a>
+                        )}
+                        {company.phone && (
+                          <a href={`tel:${company.phone}`} className="flex items-center gap-1 text-xs text-blue-600">
+                            <Phone className="h-3 w-3" />
+                            Telefone
+                          </a>
+                        )}
+                        {company.website && (
+                          <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-blue-600">
+                            <Globe className="h-3 w-3" />
+                            Website
+                          </a>
+                        )}
+                      </div>
+                      
+                      {((company as any).nif || (company as any).alvara_number) && (
+                        <div className="text-xs space-y-1">
+                          {(company as any).nif && (
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-3 w-3 text-muted-foreground" />
+                              <span className="font-mono">NIF: {(company as any).nif}</span>
+                            </div>
+                          )}
+                          {(company as any).alvara_number && (
+                            <div className="flex items-center gap-1">
+                              <FileText className="h-3 w-3 text-muted-foreground" />
+                              <span className="font-mono">Alvará: {(company as any).alvara_number}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </MobileCard>
+                )}
+                emptyState={
+                  <div className="text-center py-8">
+                    <Building2 className="mx-auto h-12 w-12 text-muted-foreground" />
+                    <h3 className="mt-2 text-sm font-semibold">{t('messages.noData')}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {searchQuery 
+                        ? 'Tente ajustar os termos de pesquisa'
+                        : 'Comece por criar a sua primeira empresa'
+                      }
+                    </p>
+                    {!searchQuery && (
+                      <Button onClick={handleCreateCompany} className="mt-4">
+                        <Plus className="mr-2 h-4 w-4" />
+                        {t('actions.add')} {t('navigation.companies').slice(0, -1)}
+                      </Button>
+                    )}
+                  </div>
+                }
+              />
+            )}
+          </CardContent>
+        </Card>
+      </div>
       {/* Company Dialog */}
       <CompanyDialog
         open={dialogOpen}

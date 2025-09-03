@@ -8,8 +8,10 @@ import { OpportunityDialog } from '@/components/crm/opportunities/OpportunityDia
 import { ActivityDialog } from '@/components/crm/activities/ActivityDialog'
 import { InvoiceDialog } from '@/components/billing/InvoiceDialog'
 import { mockCompanies } from '@/lib/mock-data'
+import { useIsMobile } from '@/components/ui/use-mobile'
 
 export function DashboardLayout() {
+  const isMobile = useIsMobile();
   const [companyDialogOpen, setCompanyDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [opportunityDialogOpen, setOpportunityDialogOpen] = useState(false);
@@ -38,11 +40,20 @@ export function DashboardLayout() {
 
   return (
     <>
-      <div className="flex h-screen bg-background">
+      <div className={cn(
+        "flex h-screen bg-background",
+        isMobile ? "flex-col" : "flex-row"
+      )}>
         <CRMSidebar onQuickAction={handleQuickAction} />
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className={cn(
+          "flex flex-col flex-1 overflow-hidden",
+          isMobile ? "min-h-0" : ""
+        )}>
           <CRMHeader />
-          <main className="flex-1 overflow-y-auto">
+          <main className={cn(
+            "flex-1 overflow-y-auto",
+            isMobile ? "px-2" : ""
+          )}>
             <Outlet />
           </main>
         </div>

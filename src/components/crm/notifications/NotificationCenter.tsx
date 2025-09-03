@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { AngolaDateDisplay } from '@/components/angola/AngolaDateTimePicker';
 import { toast } from 'sonner';
+import { useNotifications } from '@/hooks/use-notifications';
 
 interface Notification {
   id: number;
@@ -41,75 +42,18 @@ interface Notification {
   };
 }
 
-// Mock notifications
-const mockNotifications: Notification[] = [
-  {
-    id: 1,
-    type: 'warning',
-    title: 'Oportunidade prestes a vencer',
-    message: 'A oportunidade "Sistema CRM - Sonangol" tem data de fecho para amanhã',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    read: false,
-    relatedEntity: {
-      type: 'opportunity',
-      id: 1,
-      name: 'Sistema CRM - Sonangol'
-    }
-  },
-  {
-    id: 2,
-    type: 'success',
-    title: 'Fatura paga',
-    message: 'A fatura FT A2024/000002 foi paga integralmente',
-    timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-    read: false
-  },
-  {
-    id: 3,
-    type: 'info',
-    title: 'Nova atividade agendada',
-    message: 'Reunião com BFA agendada para 15/02/2024 às 14:00',
-    timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    relatedEntity: {
-      type: 'activity',
-      id: 1,
-      name: 'Reunião com BFA'
-    }
-  },
-  {
-    id: 4,
-    type: 'warning',
-    title: 'Atividade em atraso',
-    message: 'A tarefa "Preparar proposta" está em atraso há 2 dias',
-    timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    relatedEntity: {
-      type: 'activity',
-      id: 2,
-      name: 'Preparar proposta'
-    }
-  },
-  {
-    id: 5,
-    type: 'info',
-    title: 'Novo contacto adicionado',
-    message: 'Carlos Mendes foi adicionado como contacto da Unitel',
-    timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    read: true,
-    relatedEntity: {
-      type: 'contact',
-      id: 3,
-      name: 'Carlos Mendes'
-    }
-  }
-];
-
 export function NotificationCenter() {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [open, setOpen] = useState(false);
+  
+  const {
+    notifications,
+    getUnreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification
+  } = useNotifications();
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = getUnreadCount();
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -139,31 +83,9 @@ export function NotificationCenter() {
     }
   };
 
-  const markAsRead = (notificationId: number) => {
-    setNotifications(prev => 
-      prev.map(n => 
-        n.id === notificationId ? { ...n, read: true } : n
-      )
-    );
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => 
-      prev.map(n => ({ ...n, read: true }))
-    );
-    toast.success('Todas as notificações marcadas como lidas');
-  };
-
-  const deleteNotification = (notificationId: number) => {
-    setNotifications(prev => 
-      prev.filter(n => n.id !== notificationId)
-    );
-    toast.success('Notificação eliminada');
-  };
-
   const getTimeAgo = (timestamp: string) => {
     const now = new Date();
-    const notificationTime = new Date(timestamp);
+    const notificationTime = typeof timestamp === 'string' ? new Date(timestamp) : timestamp;
     const diffInHours = Math.floor((now.getTime() - notificationTime.getTime()) / (1000 * 60 * 60));
     
     if (diffInHours < 1) {
@@ -231,7 +153,7 @@ export function NotificationCenter() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                            className="h-6 w-6 opacity-0 hover:opacity-100"
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteNotification(notification.id);

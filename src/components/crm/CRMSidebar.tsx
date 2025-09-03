@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { useIsMobile } from '@/components/ui/use-mobile';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { 
   LayoutDashboard,
   Building2,
@@ -113,13 +115,11 @@ export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
   const location = useLocation();
   const pathname = location.pathname;
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const isMobile = useIsMobile();
 
-  return (
-    <div className={cn(
-      "flex flex-col border-r bg-background",
-      collapsed ? "w-16" : "w-64",
-      className
-    )}>
+  const SidebarContent = () => (
+    <>
       {/* Header */}
       <div className="flex h-16 items-center justify-between px-4 border-b">
         {!collapsed && (
@@ -128,18 +128,20 @@ export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
             <span className="text-lg font-semibold">Sistema CRM</span>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed(!collapsed)}
-          className="h-8 w-8"
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </Button>
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(!collapsed)}
+            className="h-8 w-8"
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </Button>
+        )}
       </div>
 
       <ScrollArea className="flex-1">
@@ -157,7 +159,10 @@ export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start gap-2 h-8"
-                    onClick={() => onQuickAction?.(action.action)}
+                    onClick={() => {
+                      onQuickAction?.(action.action);
+                      if (isMobile) setMobileOpen(false);
+                    }}
                   >
                     <Plus className="h-3 w-3" />
                     {action.name}
@@ -174,7 +179,7 @@ export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
               const isActive = pathname === item.href || 
                               (pathname.startsWith(item.href + '/') && item.href !== '/dashboard');
               return (
-              <Link key={item.name} to={item.href}>
+                <Link key={item.name} to={item.href}>
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
@@ -182,6 +187,9 @@ export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
                       collapsed ? "px-2" : "px-3",
                       isActive && "bg-secondary"
                     )}
+                    onClick={() => {
+                      if (isMobile) setMobileOpen(false);
+                    }}
                   >
                     <item.icon className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && <span>{item.name}</span>}
@@ -192,6 +200,30 @@ export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
           </nav>
         </div>
       </ScrollArea>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="icon" className="md:hidden fixed top-4 left-4 z-40">
+            <LayoutDashboard className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="left" className="w-64 p-0">
+          <SidebarContent />
+        </SheetContent>
+      </Sheet>
+    );
+  }
+  return (
+    <div className={cn(
+      "flex flex-col border-r bg-background",
+      collapsed ? "w-16" : "w-64",
+      className
+    )}>
+      <SidebarContent />
     </div>
   );
 }
