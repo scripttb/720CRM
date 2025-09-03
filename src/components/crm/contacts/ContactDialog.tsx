@@ -303,11 +303,60 @@ export function ContactDialog({
           </div>
 
           {/* Angola-specific fields */}
-          <AngolaFormFields
-            formData={formData}
-            onFieldChange={handleAngolaFieldChange}
-            showValidation={true}
-          />
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Documentação Angolana</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bi_number">Bilhete de Identidade</Label>
+                <Input
+                  id="bi_number"
+                  value={formData.bi_number}
+                  onChange={(e) => handleInputChange('bi_number', e.target.value)}
+                  placeholder="123456789AB123"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="nif">NIF</Label>
+                <Input
+                  id="nif"
+                  value={formData.nif}
+                  onChange={(e) => handleInputChange('nif', e.target.value)}
+                  placeholder="123456789"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="province">Província</Label>
+                <Select 
+                  value={formData.province || ''} 
+                  onValueChange={(value) => handleInputChange('province', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar província" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Luanda">Luanda</SelectItem>
+                    <SelectItem value="Benguela">Benguela</SelectItem>
+                    <SelectItem value="Huambo">Huambo</SelectItem>
+                    <SelectItem value="Huíla">Huíla</SelectItem>
+                    <SelectItem value="Cabinda">Cabinda</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="municipality">Município</Label>
+                <Input
+                  id="municipality"
+                  value={formData.municipality || ''}
+                  onChange={(e) => handleInputChange('municipality', e.target.value)}
+                  placeholder="Município"
+                />
+              </div>
+            </div>
+          </div>
 
           {/* Primary Contact Switch */}
           <div className="flex items-center space-x-2">

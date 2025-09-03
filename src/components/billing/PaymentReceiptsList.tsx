@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { mockPaymentReceipts } from '@/data/billing-mock-data';
 import { PaymentReceipt } from '@/types/billing';
+import { PaymentReceiptDialog } from './PaymentReceiptDialog';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { AngolaDateDisplay } from '@/components/angola/AngolaDateTimePicker';
@@ -43,6 +44,8 @@ export function PaymentReceiptsList() {
   const [paymentReceipts, setPaymentReceipts] = useState<PaymentReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingPaymentReceipt, setEditingPaymentReceipt] = useState<PaymentReceipt | null>(null);
 
   const fetchPaymentReceipts = useCallback(async () => {
     try {
@@ -72,7 +75,13 @@ export function PaymentReceiptsList() {
   }, [fetchPaymentReceipts]);
 
   const handleCreatePaymentReceipt = () => {
-    toast.info('Funcionalidade de criação de recibo em desenvolvimento');
+    setEditingPaymentReceipt(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditPaymentReceipt = (paymentReceipt: PaymentReceipt) => {
+    setEditingPaymentReceipt(paymentReceipt);
+    setDialogOpen(true);
   };
 
   const handleDeletePaymentReceipt = async (receiptId: number) => {
@@ -87,6 +96,18 @@ export function PaymentReceiptsList() {
       toast.error('Falha ao eliminar recibo de pagamento');
       console.error('Error deleting payment receipt:', error);
     }
+  };
+
+  const handlePaymentReceiptSaved = (savedPaymentReceipt: PaymentReceipt) => {
+    if (editingPaymentReceipt) {
+      setPaymentReceipts(paymentReceipts.map(pr => 
+        pr.id === savedPaymentReceipt.id ? savedPaymentReceipt : pr
+      ));
+    } else {
+      setPaymentReceipts([savedPaymentReceipt, ...paymentReceipts]);
+    }
+    setDialogOpen(false);
+    setEditingPaymentReceipt(null);
   };
 
   return (
@@ -216,7 +237,7 @@ export function PaymentReceiptsList() {
                               <Download className="mr-2 h-4 w-4" />
                               Descarregar PDF
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditPaymentReceipt(receipt)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </DropdownMenuItem>
@@ -239,6 +260,14 @@ export function PaymentReceiptsList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Payment Receipt Dialog */}
+      <PaymentReceiptDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        paymentReceipt={editingPaymentReceipt}
+        onSave={handlePaymentReceiptSaved}
+      />
     </div>
   );
 }

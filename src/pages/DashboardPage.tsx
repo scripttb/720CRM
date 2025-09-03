@@ -1,7 +1,7 @@
 import { DashboardStats } from '@/components/crm/DashboardStats'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, TrendingUp, Users, Target, Calendar } from 'lucide-react'
+import { Plus, TrendingUp, Users, Target, Calendar, Receipt } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 export function DashboardPage() {
@@ -64,6 +64,12 @@ export function DashboardPage() {
               <Button variant="outline" className="w-full justify-start">
                 <Calendar className="mr-2 h-4 w-4" />
                 Agendar Actividade
+              </Button>
+            </Link>
+            <Link to="/dashboard/billing">
+              <Button variant="outline" className="w-full justify-start">
+                <Receipt className="mr-2 h-4 w-4" />
+                Nova Fatura
               </Button>
             </Link>
           </CardContent>

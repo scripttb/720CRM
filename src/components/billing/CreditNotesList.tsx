@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { mockCreditNotes } from '@/data/billing-mock-data';
 import { CreditNote } from '@/types/billing';
+import { CreditNoteDialog } from './CreditNoteDialog';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { AngolaDateDisplay } from '@/components/angola/AngolaDateTimePicker';
@@ -43,6 +44,8 @@ export function CreditNotesList() {
   const [creditNotes, setCreditNotes] = useState<CreditNote[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingCreditNote, setEditingCreditNote] = useState<CreditNote | null>(null);
 
   const fetchCreditNotes = useCallback(async () => {
     try {
@@ -73,7 +76,13 @@ export function CreditNotesList() {
   }, [fetchCreditNotes]);
 
   const handleCreateCreditNote = () => {
-    toast.info('Funcionalidade de criação de nota de crédito em desenvolvimento');
+    setEditingCreditNote(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditCreditNote = (creditNote: CreditNote) => {
+    setEditingCreditNote(creditNote);
+    setDialogOpen(true);
   };
 
   const handleDeleteCreditNote = async (creditNoteId: number) => {
@@ -88,6 +97,18 @@ export function CreditNotesList() {
       toast.error('Falha ao eliminar nota de crédito');
       console.error('Error deleting credit note:', error);
     }
+  };
+
+  const handleCreditNoteSaved = (savedCreditNote: CreditNote) => {
+    if (editingCreditNote) {
+      setCreditNotes(creditNotes.map(cn => 
+        cn.id === savedCreditNote.id ? savedCreditNote : cn
+      ));
+    } else {
+      setCreditNotes([savedCreditNote, ...creditNotes]);
+    }
+    setDialogOpen(false);
+    setEditingCreditNote(null);
   };
 
   return (
@@ -215,7 +236,7 @@ export function CreditNotesList() {
                               <Download className="mr-2 h-4 w-4" />
                               Descarregar PDF
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditCreditNote(creditNote)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </DropdownMenuItem>
@@ -238,6 +259,14 @@ export function CreditNotesList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Credit Note Dialog */}
+      <CreditNoteDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        creditNote={editingCreditNote}
+        onSave={handleCreditNoteSaved}
+      />
     </div>
   );
 }

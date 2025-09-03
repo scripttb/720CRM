@@ -369,11 +369,46 @@ export function CompanyDialog({
           {/* Angola-specific fields */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Documentação Angolana</h3>
-            <AngolaFormFields
-              formData={formData}
-              onFieldChange={handleAngolaFieldChange}
-              showValidation={true}
-            />
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="nif">NIF</Label>
+                <Input
+                  id="nif"
+                  value={formData.nif}
+                  onChange={(e) => handleInputChange('nif', e.target.value)}
+                  placeholder="123456789"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="alvara_number">Alvará</Label>
+                <Input
+                  id="alvara_number"
+                  value={formData.alvara_number}
+                  onChange={(e) => handleInputChange('alvara_number', e.target.value)}
+                  placeholder="ALV/2024/001"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tax_regime">Regime Fiscal</Label>
+              <Select 
+                value={formData.tax_regime} 
+                onValueChange={(value) => handleInputChange('tax_regime', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleccionar regime" />
+                </SelectTrigger>
+                <SelectContent>
+                  {angolaLocalization.taxRegimes.map((regime) => (
+                    <SelectItem key={regime} value={regime}>
+                      {regime}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Description */}
