@@ -177,24 +177,6 @@ export function OpportunityDialog({
     }));
   };
 
-  const getCompanyName = (companyId?: number) => {
-    if (!companyId) return 'Seleccionar empresa';
-    const company = companies.find(c => c.id === companyId);
-    return company?.name || 'Empresa desconhecida';
-  };
-
-  const getContactName = (contactId?: number) => {
-    if (!contactId) return 'Seleccionar contacto';
-    const contact = contacts.find(c => c.id === contactId);
-    return contact ? `${contact.first_name} ${contact.last_name}` : 'Contacto desconhecido';
-  };
-
-  const getStageName = (stageId?: number) => {
-    if (!stageId) return 'Seleccionar fase';
-    const stage = pipelineStages.find(s => s.id === stageId);
-    return stage?.name || 'Fase desconhecida';
-  };
-
   // Filter contacts by selected company
   const filteredContacts = formData.company_id 
     ? contacts.filter(c => c.company_id === formData.company_id)

@@ -48,6 +48,7 @@ import { api } from '@/lib/api-client';
 import { Activity } from '@/types/crm';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/angola-translations';
+import { ActivityDialog } from './ActivityDialog';
 
 export function ActivitiesList() {
   const { t } = useTranslation();
@@ -56,6 +57,8 @@ export function ActivitiesList() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -90,6 +93,16 @@ export function ActivitiesList() {
     return () => clearTimeout(debounceTimer);
   }, [searchQuery, fetchActivities]);
 
+  const handleCreateActivity = () => {
+    setEditingActivity(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditActivity = (activity: Activity) => {
+    setEditingActivity(activity);
+    setDialogOpen(true);
+  };
+
   const handleDeleteActivity = async (activityId: number) => {
     if (!confirm('Tem a certeza que deseja eliminar esta actividade?')) {
       return;
@@ -103,6 +116,18 @@ export function ActivitiesList() {
       toast.error('Falha ao eliminar actividade');
       console.error('Error deleting activity:', error);
     }
+  };
+
+  const handleActivitySaved = (savedActivity: Activity) => {
+    if (editingActivity) {
+      setActivities(activities.map(a => 
+        a.id === savedActivity.id ? savedActivity : a
+      ));
+    } else {
+      setActivities([savedActivity, ...activities]);
+    }
+    setDialogOpen(false);
+    setEditingActivity(null);
   };
 
   const getActivityIcon = (type: string) => {
@@ -155,6 +180,14 @@ export function ActivitiesList() {
     return new Date(dateString).toLocaleString('pt-AO');
   };
 
+  const filteredActivities = activities.filter(activity => {
+    const matchesSearch = !searchQuery || 
+      activity.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      activity.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesSearch;
+  });
+
   return (
     <div className="space-y-6">
       {/* Header Actions */}
@@ -198,7 +231,7 @@ export function ActivitiesList() {
             </SelectContent>
           </Select>
           
-          <Button>
+          <Button onClick={handleCreateActivity}>
             <Plus className="mr-2 h-4 w-4" />
             Adicionar Actividade
           </Button>
@@ -208,14 +241,14 @@ export function ActivitiesList() {
       {/* Activities Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Actividades ({activities.length})</CardTitle>
+          <CardTitle>Actividades ({filteredActivities.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : activities.length === 0 ? (
+          ) : filteredActivities.length === 0 ? (
             <div className="text-center py-8">
               <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-2 text-sm font-semibold">Nenhuma actividade encontrada</h3>
@@ -226,7 +259,7 @@ export function ActivitiesList() {
                 }
               </p>
               {!searchQuery && selectedType === 'all' && selectedStatus === 'all' && (
-                <Button className="mt-4">
+                <Button onClick={handleCreateActivity} className="mt-4">
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Actividade
                 </Button>
@@ -247,7 +280,7 @@ export function ActivitiesList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activities.map((activity) => (
+                  {filteredActivities.map((activity) => (
                     <TableRow key={activity.id}>
                       <TableCell>
                         <div>
@@ -294,7 +327,7 @@ export function ActivitiesList() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acções</DropdownMenuLabel>
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditActivity(activity)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Editar
                             </DropdownMenuItem>
@@ -317,6 +350,14 @@ export function ActivitiesList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Dialog */}
+      <ActivityDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        activity={editingActivity}
+        onSave={handleActivitySaved}
+      />
     </div>
   );
 }
