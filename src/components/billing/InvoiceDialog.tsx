@@ -21,12 +21,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { api } from '@/lib/api-client';
+import { mockCompanies, mockContacts } from '@/lib/mock-data';
+import { mockProducts } from '@/data/billing-mock-data';
 import { Invoice, BillingFormData, Product } from '@/types/billing';
 import { Company, Contact } from '@/types/crm';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2 } from 'lucide-react';
-import { AngolaDateTimePicker } from '@/components/angola/AngolaDateTimePicker';
 import { KwanzaInput } from '@/components/angola/KwanzaCurrencyDisplay';
 import { TAX_EXEMPTION_CODES } from '@/types/billing';
 
@@ -44,9 +44,9 @@ export function InvoiceDialog({
   onSave 
 }: InvoiceDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companies] = useState<Company[]>(mockCompanies);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products] = useState<Product[]>(mockProducts);
   const [formData, setFormData] = useState<BillingFormData>({
     issue_date: new Date().toISOString().split('T')[0],
     currency: 'AOA',
@@ -59,32 +59,13 @@ export function InvoiceDialog({
     }]
   });
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [companiesData, productsData] = await Promise.all([
-        api.get<Company[]>('/companies'),
-        api.get<Product[]>('/billing/products')
-      ]);
-      setCompanies(companiesData);
-      setProducts(productsData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  }, []);
-
   const fetchContacts = useCallback(async (companyId: number) => {
-    try {
-      const data = await api.get<Contact[]>('/contacts', { company_id: companyId.toString() });
-      setContacts(data);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-    }
+    const filteredContacts = mockContacts.filter(c => c.company_id === companyId);
+    setContacts(filteredContacts);
   }, []);
 
   useEffect(() => {
     if (open) {
-      fetchData();
-      
       if (invoice) {
         setFormData({
           company_id: invoice.company_id,
@@ -94,7 +75,13 @@ export function InvoiceDialog({
           currency: invoice.currency,
           notes: invoice.notes,
           terms_conditions: invoice.terms_conditions,
-          items: [] // Carregar itens da fatura
+          items: [{
+            description: 'Item da fatura',
+            quantity: 1,
+            unit_price: invoice.subtotal,
+            discount_percentage: 0,
+            tax_rate: 14.00
+          }]
         });
       } else {
         setFormData({
@@ -110,13 +97,34 @@ export function InvoiceDialog({
         });
       }
     }
-  }, [open, invoice, fetchData]);
+  }, [open, invoice]);
 
   useEffect(() => {
     if (formData.company_id) {
       fetchContacts(formData.company_id);
     }
   }, [formData.company_id, fetchContacts]);
+
+  const calculateTotals = () => {
+    let subtotal = 0;
+    let taxAmount = 0;
+
+    formData.items.forEach(item => {
+      const itemSubtotal = item.quantity * item.unit_price;
+      const itemDiscount = (itemSubtotal * (item.discount_percentage || 0)) / 100;
+      const itemNetAmount = itemSubtotal - itemDiscount;
+      const itemTaxAmount = (itemNetAmount * (item.tax_rate || 0)) / 100;
+      
+      subtotal += itemNetAmount;
+      taxAmount += itemTaxAmount;
+    });
+
+    return {
+      subtotal,
+      taxAmount,
+      total: subtotal + taxAmount
+    };
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,13 +141,31 @@ export function InvoiceDialog({
 
     setLoading(true);
     try {
-      let savedInvoice: Invoice;
+      const totals = calculateTotals();
       
-      if (invoice) {
-        savedInvoice = await api.put<Invoice>(`/billing/invoices?id=${invoice.id}`, formData);
-      } else {
-        savedInvoice = await api.post<Invoice>('/billing/invoices', formData);
-      }
+      const savedInvoice: Invoice = {
+        id: invoice?.id || Date.now(),
+        user_id: 1,
+        document_number: invoice?.document_number || `FT 2024/${String(Date.now()).slice(-6)}`,
+        atcud: `FT-${Date.now()}`,
+        hash_control: `hash-${Date.now()}`,
+        company_id: formData.company_id,
+        contact_id: formData.contact_id,
+        issue_date: formData.issue_date,
+        due_date: formData.due_date,
+        subtotal: totals.subtotal,
+        tax_amount: totals.taxAmount,
+        total_amount: totals.total,
+        currency: formData.currency,
+        status: 'issued',
+        payment_status: 'pending',
+        paid_amount: 0,
+        notes: formData.notes,
+        terms_conditions: formData.terms_conditions,
+        certification_date: new Date().toISOString(),
+        create_time: invoice?.create_time || new Date().toISOString(),
+        modify_time: new Date().toISOString(),
+      };
       
       onSave(savedInvoice);
       toast.success(invoice ? 'Fatura actualizada com sucesso' : 'Fatura criada com sucesso');
@@ -180,27 +206,6 @@ export function InvoiceDialog({
     }));
   };
 
-  const calculateTotals = () => {
-    let subtotal = 0;
-    let taxAmount = 0;
-
-    formData.items.forEach(item => {
-      const itemSubtotal = item.quantity * item.unit_price;
-      const itemDiscount = (itemSubtotal * (item.discount_percentage || 0)) / 100;
-      const itemNetAmount = itemSubtotal - itemDiscount;
-      const itemTaxAmount = (itemNetAmount * (item.tax_rate || 0)) / 100;
-      
-      subtotal += itemNetAmount;
-      taxAmount += itemTaxAmount;
-    });
-
-    return {
-      subtotal,
-      taxAmount,
-      total: subtotal + taxAmount
-    };
-  };
-
   const totals = calculateTotals();
 
   return (
@@ -231,7 +236,7 @@ export function InvoiceDialog({
                   onValueChange={(value) => setFormData(prev => ({ 
                     ...prev, 
                     company_id: value ? parseInt(value) : undefined,
-                    contact_id: undefined // Reset contact when company changes
+                    contact_id: undefined
                   }))}
                 >
                   <SelectTrigger>

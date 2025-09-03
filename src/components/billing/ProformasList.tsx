@@ -41,7 +41,7 @@ import {
   Loader2,
   Plus
 } from 'lucide-react';
-import { api } from '@/lib/api-client';
+import { mockProformas } from '@/data/billing-mock-data';
 import { Proforma } from '@/types/billing';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
@@ -59,16 +59,23 @@ export function ProformasList() {
   const fetchProformas = useCallback(async () => {
     try {
       setLoading(true);
-      const params: Record<string, string> = {};
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let filteredData = [...mockProformas];
+      
       if (searchQuery) {
-        params.search = searchQuery;
-      }
-      if (selectedStatus !== 'all') {
-        params.status = selectedStatus;
+        filteredData = filteredData.filter(p => 
+          p.document_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.notes?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       }
       
-      const data = await api.get<Proforma[]>('/billing/proformas', params);
-      setProformas(data);
+      if (selectedStatus !== 'all') {
+        filteredData = filteredData.filter(p => p.status === selectedStatus);
+      }
+      
+      setProformas(filteredData);
     } catch (error) {
       toast.error('Falha ao carregar proformas');
       console.error('Error fetching proformas:', error);
@@ -80,14 +87,6 @@ export function ProformasList() {
   useEffect(() => {
     fetchProformas();
   }, [fetchProformas]);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchProformas();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, selectedStatus, fetchProformas]);
 
   const handleCreateProforma = () => {
     setEditingProforma(null);
@@ -105,7 +104,6 @@ export function ProformasList() {
     }
 
     try {
-      await api.delete(`/billing/proformas?id=${proformaId}`);
       setProformas(proformas.filter(p => p.id !== proformaId));
       toast.success('Proforma eliminada com sucesso');
     } catch (error) {

@@ -42,7 +42,7 @@ import {
   Loader2,
   Plus
 } from 'lucide-react';
-import { api } from '@/lib/api-client';
+import { mockInvoices } from '@/data/billing-mock-data';
 import { Invoice } from '@/types/billing';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
@@ -61,19 +61,26 @@ export function InvoicesList() {
   const fetchInvoices = useCallback(async () => {
     try {
       setLoading(true);
-      const params: Record<string, string> = {};
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let filteredData = [...mockInvoices];
+      
       if (searchQuery) {
-        params.search = searchQuery;
-      }
-      if (selectedStatus !== 'all') {
-        params.status = selectedStatus;
-      }
-      if (selectedPaymentStatus !== 'all') {
-        params.payment_status = selectedPaymentStatus;
+        filteredData = filteredData.filter(i => 
+          i.document_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          i.notes?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       }
       
-      const data = await api.get<Invoice[]>('/billing/invoices', params);
-      setInvoices(data);
+      if (selectedStatus !== 'all') {
+        filteredData = filteredData.filter(i => i.status === selectedStatus);
+      }
+      
+      if (selectedPaymentStatus !== 'all') {
+        filteredData = filteredData.filter(i => i.payment_status === selectedPaymentStatus);
+      }
+      
+      setInvoices(filteredData);
     } catch (error) {
       toast.error('Falha ao carregar faturas');
       console.error('Error fetching invoices:', error);
@@ -85,14 +92,6 @@ export function InvoicesList() {
   useEffect(() => {
     fetchInvoices();
   }, [fetchInvoices]);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchInvoices();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, selectedStatus, selectedPaymentStatus, fetchInvoices]);
 
   const handleCreateInvoice = () => {
     setEditingInvoice(null);
@@ -110,7 +109,6 @@ export function InvoicesList() {
     }
 
     try {
-      await api.delete(`/billing/invoices?id=${invoiceId}`);
       setInvoices(invoices.filter(i => i.id !== invoiceId));
       toast.success('Fatura eliminada com sucesso');
     } catch (error) {

@@ -21,7 +21,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { api } from '@/lib/api-client';
+import { mockCompanies, mockContacts } from '@/lib/mock-data';
+import { mockProducts } from '@/data/billing-mock-data';
 import { Proforma, BillingFormData, Product } from '@/types/billing';
 import { Company, Contact } from '@/types/crm';
 import { toast } from 'sonner';
@@ -43,9 +44,9 @@ export function ProformaDialog({
   onSave 
 }: ProformaDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companies] = useState<Company[]>(mockCompanies);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products] = useState<Product[]>(mockProducts);
   const [formData, setFormData] = useState<BillingFormData>({
     issue_date: new Date().toISOString().split('T')[0],
     currency: 'AOA',
@@ -58,32 +59,13 @@ export function ProformaDialog({
     }]
   });
 
-  const fetchData = useCallback(async () => {
-    try {
-      const [companiesData, productsData] = await Promise.all([
-        api.get<Company[]>('/companies'),
-        api.get<Product[]>('/billing/products')
-      ]);
-      setCompanies(companiesData);
-      setProducts(productsData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-    }
-  }, []);
-
   const fetchContacts = useCallback(async (companyId: number) => {
-    try {
-      const data = await api.get<Contact[]>('/contacts', { company_id: companyId.toString() });
-      setContacts(data);
-    } catch (error) {
-      console.error('Error fetching contacts:', error);
-    }
+    const filteredContacts = mockContacts.filter(c => c.company_id === companyId);
+    setContacts(filteredContacts);
   }, []);
 
   useEffect(() => {
     if (open) {
-      fetchData();
-      
       if (proforma) {
         setFormData({
           company_id: proforma.company_id,
@@ -93,7 +75,13 @@ export function ProformaDialog({
           currency: proforma.currency,
           notes: proforma.notes,
           terms_conditions: proforma.terms_conditions,
-          items: [] // Carregar itens da proforma
+          items: [{
+            description: 'Item da proforma',
+            quantity: 1,
+            unit_price: proforma.subtotal,
+            discount_percentage: 0,
+            tax_rate: 14.00
+          }]
         });
       } else {
         setFormData({
@@ -109,7 +97,7 @@ export function ProformaDialog({
         });
       }
     }
-  }, [open, proforma, fetchData]);
+  }, [open, proforma]);
 
   useEffect(() => {
     if (formData.company_id) {
@@ -153,13 +141,26 @@ export function ProformaDialog({
 
     setLoading(true);
     try {
-      let savedProforma: Proforma;
+      const totals = calculateTotals();
       
-      if (proforma) {
-        savedProforma = await api.put<Proforma>(`/billing/proformas?id=${proforma.id}`, formData);
-      } else {
-        savedProforma = await api.post<Proforma>('/billing/proformas', formData);
-      }
+      const savedProforma: Proforma = {
+        id: proforma?.id || Date.now(),
+        user_id: 1,
+        document_number: proforma?.document_number || `PF 2024/${String(Date.now()).slice(-6)}`,
+        company_id: formData.company_id,
+        contact_id: formData.contact_id,
+        issue_date: formData.issue_date,
+        due_date: formData.due_date,
+        subtotal: totals.subtotal,
+        tax_amount: totals.taxAmount,
+        total_amount: totals.total,
+        currency: formData.currency,
+        status: 'draft',
+        notes: formData.notes,
+        terms_conditions: formData.terms_conditions,
+        create_time: proforma?.create_time || new Date().toISOString(),
+        modify_time: new Date().toISOString(),
+      };
       
       onSave(savedProforma);
       toast.success(proforma ? 'Proforma actualizada com sucesso' : 'Proforma criada com sucesso');

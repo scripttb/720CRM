@@ -33,7 +33,7 @@ import {
   Loader2,
   Plus
 } from 'lucide-react';
-import { api } from '@/lib/api-client';
+import { mockCreditNotes } from '@/data/billing-mock-data';
 import { CreditNote } from '@/types/billing';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
@@ -47,13 +47,19 @@ export function CreditNotesList() {
   const fetchCreditNotes = useCallback(async () => {
     try {
       setLoading(true);
-      const params: Record<string, string> = {};
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let filteredData = [...mockCreditNotes];
+      
       if (searchQuery) {
-        params.search = searchQuery;
+        filteredData = filteredData.filter(cn => 
+          cn.document_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          cn.original_invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          cn.reason.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       }
       
-      const data = await api.get<CreditNote[]>('/billing/credit-notes', params);
-      setCreditNotes(data);
+      setCreditNotes(filteredData);
     } catch (error) {
       toast.error('Falha ao carregar notas de crédito');
       console.error('Error fetching credit notes:', error);
@@ -66,17 +72,8 @@ export function CreditNotesList() {
     fetchCreditNotes();
   }, [fetchCreditNotes]);
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchCreditNotes();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, fetchCreditNotes]);
-
   const handleCreateCreditNote = () => {
-    // Implementar diálogo de criação de nota de crédito
-    toast.info('Funcionalidade em desenvolvimento');
+    toast.info('Funcionalidade de criação de nota de crédito em desenvolvimento');
   };
 
   const handleDeleteCreditNote = async (creditNoteId: number) => {
@@ -85,7 +82,6 @@ export function CreditNotesList() {
     }
 
     try {
-      await api.delete(`/billing/credit-notes?id=${creditNoteId}`);
       setCreditNotes(creditNotes.filter(cn => cn.id !== creditNoteId));
       toast.success('Nota de crédito eliminada com sucesso');
     } catch (error) {

@@ -33,7 +33,7 @@ import {
   Loader2,
   Plus
 } from 'lucide-react';
-import { api } from '@/lib/api-client';
+import { mockPaymentReceipts } from '@/data/billing-mock-data';
 import { PaymentReceipt } from '@/types/billing';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
@@ -47,13 +47,18 @@ export function PaymentReceiptsList() {
   const fetchPaymentReceipts = useCallback(async () => {
     try {
       setLoading(true);
-      const params: Record<string, string> = {};
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let filteredData = [...mockPaymentReceipts];
+      
       if (searchQuery) {
-        params.search = searchQuery;
+        filteredData = filteredData.filter(pr => 
+          pr.document_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          pr.payment_reference?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
       }
       
-      const data = await api.get<PaymentReceipt[]>('/billing/payment-receipts', params);
-      setPaymentReceipts(data);
+      setPaymentReceipts(filteredData);
     } catch (error) {
       toast.error('Falha ao carregar recibos de pagamento');
       console.error('Error fetching payment receipts:', error);
@@ -66,17 +71,8 @@ export function PaymentReceiptsList() {
     fetchPaymentReceipts();
   }, [fetchPaymentReceipts]);
 
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchPaymentReceipts();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, fetchPaymentReceipts]);
-
   const handleCreatePaymentReceipt = () => {
-    // Implementar diálogo de criação de recibo de pagamento
-    toast.info('Funcionalidade em desenvolvimento');
+    toast.info('Funcionalidade de criação de recibo em desenvolvimento');
   };
 
   const handleDeletePaymentReceipt = async (receiptId: number) => {
@@ -85,7 +81,6 @@ export function PaymentReceiptsList() {
     }
 
     try {
-      await api.delete(`/billing/payment-receipts?id=${receiptId}`);
       setPaymentReceipts(paymentReceipts.filter(pr => pr.id !== receiptId));
       toast.success('Recibo de pagamento eliminado com sucesso');
     } catch (error) {

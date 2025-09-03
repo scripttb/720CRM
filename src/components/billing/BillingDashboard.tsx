@@ -152,10 +152,6 @@ export function BillingDashboard() {
                 Gerir cotações e orçamentos para os seus clientes
               </p>
             </div>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Proforma
-            </Button>
           </div>
           <ProformasList />
         </TabsContent>
@@ -168,10 +164,6 @@ export function BillingDashboard() {
                 Documentos fiscais oficiais com certificação AGT
               </p>
             </div>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Fatura
-            </Button>
           </div>
           <InvoicesList />
         </TabsContent>
@@ -184,10 +176,6 @@ export function BillingDashboard() {
                 Cancelamento e correção de faturas emitidas
               </p>
             </div>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Nota de Crédito
-            </Button>
           </div>
           <CreditNotesList />
         </TabsContent>
@@ -200,10 +188,6 @@ export function BillingDashboard() {
                 Comprovativos de pagamento de faturas
               </p>
             </div>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Recibo
-            </Button>
           </div>
           <PaymentReceiptsList />
         </TabsContent>
