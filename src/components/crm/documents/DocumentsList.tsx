@@ -1,0 +1,280 @@
+"use client";
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Plus, 
+  Search, 
+  MoreHorizontal, 
+  Edit, 
+  Trash2, 
+  FileText,
+  Download,
+  Eye,
+  Upload,
+  File,
+  Image,
+  FileSpreadsheet,
+  FileVideo,
+  Loader2
+} from 'lucide-react';
+import { Document } from '@/types/crm';
+import { toast } from 'sonner';
+
+// Mock data for documents since we don't have API yet
+const mockDocuments: Document[] = [
+  {
+    id: 1,
+    name: 'Proposta de Vendas - Acme Corp.pdf',
+    file_path: '/documents/sales-proposal-acme.pdf',
+    file_size: 2048576,
+    mime_type: 'application/pdf',
+    company_id: 1,
+    uploaded_by_user_id: 1,
+    is_public: false,
+    description: 'Proposta de vendas para solução empresarial da Acme Corporation',
+    create_time: '2024-01-25T10:30:00Z',
+    modify_time: '2024-01-25T10:30:00Z',
+  },
+  {
+    id: 2,
+    name: 'Modelo de Contrato.docx',
+    file_path: '/documents/contract-template.docx',
+    file_size: 1024000,
+    mime_type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    is_public: true,
+    description: 'Modelo de contrato padrão para novos clientes',
+    create_time: '2024-01-20T14:15:00Z',
+    modify_time: '2024-01-20T14:15:00Z',
+  },
+];
+
+export function DocumentsList() {
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    // Simulate API call
+    setTimeout(() => {
+      setDocuments(mockDocuments);
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  const handleDeleteDocument = async (documentId: number) => {
+    if (!confirm('Tem a certeza que deseja eliminar este documento?')) {
+      return;
+    }
+
+    try {
+      setDocuments(documents.filter(d => d.id !== documentId));
+      toast.success('Documento eliminado com sucesso');
+    } catch (error) {
+      toast.error('Falha ao eliminar documento');
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  const getFileIcon = (mimeType?: string) => {
+    if (!mimeType) return <File className="h-4 w-4" />;
+    
+    if (mimeType.startsWith('image/')) {
+      return <Image className="h-4 w-4 text-green-600" />;
+    } else if (mimeType.includes('pdf')) {
+      return <FileText className="h-4 w-4 text-red-600" />;
+    } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
+      return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    } else if (mimeType.startsWith('video/')) {
+      return <FileVideo className="h-4 w-4 text-purple-600" />;
+    } else {
+      return <File className="h-4 w-4 text-blue-600" />;
+    }
+  };
+
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return 'Desconhecido';
+    
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('pt-AO');
+  };
+
+  const filteredDocuments = documents.filter(doc => 
+    !searchQuery || 
+    doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    doc.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header Actions */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Pesquisar documentos por nome ou descrição..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <Button>
+          <Upload className="mr-2 h-4 w-4" />
+          Carregar Documento
+        </Button>
+      </div>
+
+      {/* Documents Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Documentos ({filteredDocuments.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : filteredDocuments.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-2 text-sm font-semibold">Nenhum documento encontrado</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {searchQuery
+                  ? 'Tente ajustar os termos de pesquisa'
+                  : 'Comece por carregar o seu primeiro documento'
+                }
+              </p>
+              {!searchQuery && (
+                <Button className="mt-4">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Carregar Documento
+                </Button>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Documento</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Tamanho</TableHead>
+                    <TableHead>Visibilidade</TableHead>
+                    <TableHead>Carregado</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead className="w-[70px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredDocuments.map((document) => (
+                    <TableRow key={document.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          {getFileIcon(document.mime_type)}
+                          <div>
+                            <div className="font-medium">{document.name}</div>
+                            {document.company_id && (
+                              <div className="text-sm text-muted-foreground">
+                                ID da Empresa: {document.company_id}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {document.mime_type?.split('/')[1]?.toUpperCase() || 'Desconhecido'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {formatFileSize(document.file_size)}
+                      </TableCell>
+                      <TableCell>
+                        {document.is_public ? (
+                          <Badge variant="outline" className="text-green-600">Público</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-orange-600">Privado</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {formatDateTime(document.create_time)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="max-w-xs">
+                          {document.description ? (
+                            <p className="text-sm text-muted-foreground line-clamp-2">
+                              {document.description}
+                            </p>
+                          ) : (
+                            <span className="text-muted-foreground">Sem descrição</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Acções</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Eye className="mr-2 h-4 w-4" />
+                              Ver
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Download className="mr-2 h-4 w-4" />
+                              Descarregar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteDocument(document.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Eliminar
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
