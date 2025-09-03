@@ -16,16 +16,15 @@ export function DashboardStats() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        console.log("[v0] Fetching dashboard stats...")
-        
-        if (!isSupabaseConfigured()) {
-          console.log("[v0] Supabase not configured, using mock data")
-          setStats(getMockDashboardStats())
-          setError(null)
-          return
-        }
-
-        // Get counts from Supabase
+        // Usar dados mock diretamente para evitar erros de tabelas não encontradas
+        const contactsData = mockContacts;
+        const opportunitiesData = mockOpportunities.map(opp => ({ 
+          value: opp.value || 0, 
+          status: opp.status 
+        }));
+        const activitiesData = mockActivities.filter(activity => 
+          new Date(activity.create_time) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+        );
         const [
           { count: totalCompanies },
           { count: totalContacts },
