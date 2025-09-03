@@ -116,8 +116,7 @@ export function InvoicesList() {
     }
 
     try {
-      // In a real app, this would call an API
-      await refreshData();
+      setInvoices(invoices.filter(i => i.id !== invoiceId));
       toast.success('Fatura eliminada com sucesso');
     } catch (error) {
       toast.error('Falha ao eliminar fatura');

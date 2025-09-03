@@ -112,8 +112,7 @@ export function ProformasList() {
     }
 
     try {
-      // In a real app, this would call an API
-      await refreshData();
+      setProformas(proformas.filter(p => p.id !== proformaId));
       toast.success('Proforma eliminada com sucesso');
     } catch (error) {
       toast.error('Falha ao eliminar proforma');
@@ -145,18 +144,6 @@ export function ProformasList() {
         return <Badge variant="outline" className="text-purple-600">Convertida</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const handleConvertToInvoice = async (proforma: Proforma) => {
-    if (!confirm('Converter esta proforma em fatura?')) {
-      return;
-    }
-
-    try {
-      await convertProformaToInvoice(proforma.id);
-    } catch (error) {
-      console.error('Error converting proforma:', error);
     }
   };
 
@@ -307,7 +294,7 @@ export function ProformasList() {
                             {proforma.status === 'accepted' && !proforma.converted_to_invoice_id && (
                               <DropdownMenuItem>
                                 <ArrowRight className="mr-2 h-4 w-4" />
-                                <span onClick={() => handleConvertToInvoice(proforma)}>
+                                <span onClick={() => convertProformaToInvoice(proforma.id)}>
                                   Converter em Fatura
                                 </span>
                               </DropdownMenuItem>

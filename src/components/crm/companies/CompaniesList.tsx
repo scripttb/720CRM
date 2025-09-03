@@ -251,13 +251,13 @@ export function CompaniesList() {
                           {(company as any).nif && (
                             <div className="flex items-center gap-2 text-sm">
                               <FileText className="h-3 w-3 text-muted-foreground" />
-                              <span>NIF: {(company as any).nif}</span>
+                              <span className="font-mono">NIF: {(company as any).nif}</span>
                             </div>
                           )}
                           {(company as any).alvara_number && (
                             <div className="flex items-center gap-2 text-sm">
                               <FileText className="h-3 w-3 text-muted-foreground" />
-                              <span>Alvará: {(company as any).alvara_number}</span>
+                              <span className="font-mono">Alvará: {(company as any).alvara_number}</span>
                             </div>
                           )}
                           {(company as any).tax_regime && (

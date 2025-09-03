@@ -259,13 +259,13 @@ export function OpportunitiesList() {
                         {opportunity.value ? (
                           <KwanzaCurrencyDisplay amount={opportunity.value} />
                         ) : (
-                          <span className="text-muted-foreground">N/A</span>
+                          <span className="text-muted-foreground">Valor não definido</span>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                          {opportunity.probability ? `${opportunity.probability}%` : 'N/A'}
+                          {opportunity.probability ? `${opportunity.probability}%` : 'Não definida'}
                         </div>
                       </TableCell>
                       <TableCell>

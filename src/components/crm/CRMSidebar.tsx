@@ -174,7 +174,7 @@ export function CRMSidebar({ className, onQuickAction }: CRMSidebarProps) {
               const isActive = pathname === item.href || 
                               (pathname.startsWith(item.href + '/') && item.href !== '/dashboard');
               return (
-                <Link key={item.name} href={item.href}>
+              <Link key={item.name} to={item.href}>
                   <Button
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(

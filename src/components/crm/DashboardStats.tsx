@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { api } from "@/lib/api-client"
 import type { DashboardStats as StatsType } from "@/types/crm"
 import { Building2, Users, Target, TrendingUp, CheckCircle, XCircle, Calendar } from "lucide-react"
 import { KwanzaCurrencyDisplay } from "@/components/angola/KwanzaCurrencyDisplay"

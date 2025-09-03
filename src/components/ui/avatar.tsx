@@ -27,6 +27,10 @@ const AvatarImage = React.forwardRef<
   <AvatarPrimitive.Image
     ref={ref}
     className={cn("aspect-square h-full w-full", className)}
+    onError={(e) => {
+      // Hide broken images gracefully
+      (e.target as HTMLImageElement).style.display = 'none';
+    }}
     {...props}
   />
 ))

@@ -309,14 +309,14 @@ export function ActivitiesList() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          {formatDateTime(activity.due_date)}
+                          {activity.due_date ? formatDateTime(activity.due_date) : 'Não definida'}
                         </div>
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(activity.status)}
                       </TableCell>
                       <TableCell>
-                        {activity.duration_minutes ? `${activity.duration_minutes} min` : 'N/A'}
+                        {activity.duration_minutes ? `${activity.duration_minutes} min` : 'Não definida'}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

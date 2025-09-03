@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import {
   Select,
   SelectContent,
@@ -133,7 +134,9 @@ export function ReportsDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Kz 328.000</div>
+            <div className="text-2xl font-bold">
+              <KwanzaCurrencyDisplay amount={328000} />
+            </div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">+12,5%</span> do período anterior
             </p>
@@ -172,7 +175,9 @@ export function ReportsDashboard() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Kz 3.489</div>
+            <div className="text-2xl font-bold">
+              <KwanzaCurrencyDisplay amount={3489} />
+            </div>
             <p className="text-xs text-muted-foreground">
               <span className="text-green-600">+5,7%</span> do período anterior
             </p>

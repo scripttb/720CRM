@@ -42,6 +42,7 @@ import {
   User,
   Loader2
 } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { api } from '@/lib/api-client';
 import { Contact, Company } from '@/types/crm';
 import { toast } from 'sonner';
@@ -284,12 +285,13 @@ export function ContactsList() {
                           {contact.phone && (
                             <div className="flex items-center gap-2 text-sm">
                               <Phone className="h-3 w-3 text-muted-foreground" />
-                              <a 
-                                href={`tel:${contact.phone}`}
-                                className="text-blue-600 hover:underline"
-                              >
-                                {contact.phone}
-                              </a>
+                              <span className="font-mono">{contact.phone}</span>
+                            </div>
+                          )}
+                          {(contact as any).bi_number && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <FileText className="h-3 w-3 text-muted-foreground" />
+                              <span className="font-mono text-xs">BI: {(contact as any).bi_number}</span>
                             </div>
                           )}
                         </div>
