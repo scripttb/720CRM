@@ -1,8 +1,5 @@
-"use client";
-
 import { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -109,7 +106,8 @@ const quickActions = [
 ];
 
 export function CRMSidebar({ className }: SidebarProps) {
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
   const [collapsed, setCollapsed] = useState(false);
 
   return (
