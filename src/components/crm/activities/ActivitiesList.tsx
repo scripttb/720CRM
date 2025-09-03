@@ -42,56 +42,30 @@ import {
   CheckSquare,
   FileText,
   Clock,
+  CheckCircle,
   Loader2
 } from 'lucide-react';
-import { api } from '@/lib/api-client';
 import { Activity } from '@/types/crm';
+import { useActivities } from '@/hooks/use-activities';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/angola-translations';
 import { ActivityDialog } from './ActivityDialog';
 
 export function ActivitiesList() {
   const { t } = useTranslation();
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
 
-  const fetchActivities = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: Record<string, string> = {};
-      if (selectedType !== 'all') {
-        params.type = selectedType;
-      }
-      if (selectedStatus !== 'all') {
-        params.status = selectedStatus;
-      }
-      
-      const data = await api.get<Activity[]>('/activities', params);
-      setActivities(data);
-    } catch (error) {
-      toast.error('Falha ao carregar actividades');
-      console.error('Error fetching activities:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedType, selectedStatus]);
-
-  useEffect(() => {
-    fetchActivities();
-  }, [fetchActivities]);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchActivities();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, fetchActivities]);
+  const {
+    activities,
+    loading,
+    searchQuery,
+    filters,
+    setSearchQuery,
+    setFilters,
+    deleteActivity,
+    markAsCompleted
+  } = useActivities();
 
   const handleCreateActivity = () => {
     setEditingActivity(null);
@@ -109,23 +83,20 @@ export function ActivitiesList() {
     }
 
     try {
-      await api.delete(`/activities?id=${activityId}`);
-      setActivities(activities.filter(a => a.id !== activityId));
-      toast.success('Actividade eliminada com sucesso');
+      await deleteActivity(activityId);
     } catch (error) {
-      toast.error('Falha ao eliminar actividade');
       console.error('Error deleting activity:', error);
     }
   };
 
-  const handleActivitySaved = (savedActivity: Activity) => {
-    if (editingActivity) {
-      setActivities(activities.map(a => 
-        a.id === savedActivity.id ? savedActivity : a
-      ));
-    } else {
-      setActivities([savedActivity, ...activities]);
+  const handleMarkAsCompleted = async (activityId: number) => {
+    try {
+      await markAsCompleted(activityId);
+    } catch (error) {
+      console.error('Error marking activity as completed:', error);
     }
+  };
+  const handleActivitySaved = (savedActivity: Activity) => {
     setDialogOpen(false);
     setEditingActivity(null);
   };
@@ -203,7 +174,7 @@ export function ActivitiesList() {
         </div>
         
         <div className="flex gap-2">
-          <Select value={selectedType} onValueChange={setSelectedType}>
+          <Select value={filters.type} onValueChange={(value) => setFilters(prev => ({ ...prev, type: value }))}>
             <SelectTrigger className="w-[120px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Tipo" />
@@ -218,7 +189,7 @@ export function ActivitiesList() {
             </SelectContent>
           </Select>
 
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
             <SelectTrigger className="w-[120px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Estado" />
@@ -253,12 +224,12 @@ export function ActivitiesList() {
               <Calendar className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-2 text-sm font-semibold">Nenhuma actividade encontrada</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {searchQuery || selectedType !== 'all' || selectedStatus !== 'all'
+                {searchQuery || filters.type !== 'all' || filters.status !== 'all'
                   ? 'Tente ajustar a sua pesquisa ou filtros'
                   : 'Comece por criar a sua primeira actividade'
                 }
               </p>
-              {!searchQuery && selectedType === 'all' && selectedStatus === 'all' && (
+              {!searchQuery && filters.type === 'all' && filters.status === 'all' && (
                 <Button onClick={handleCreateActivity} className="mt-4">
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Actividade
@@ -327,6 +298,15 @@ export function ActivitiesList() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Acções</DropdownMenuLabel>
+                            {activity.status === 'pending' && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleMarkAsCompleted(activity.id)}>
+                                  <CheckCircle className="mr-2 h-4 w-4" />
+                                  Marcar como Concluída
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                              </>
+                            )}
                             <DropdownMenuItem onClick={() => handleEditActivity(activity)}>
                               <Edit className="mr-2 h-4 w-4" />
                               Editar

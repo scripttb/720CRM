@@ -1,10 +1,17 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -24,6 +31,7 @@ import {
 import { 
   Plus, 
   Search, 
+  Filter,
   MoreHorizontal, 
   Edit, 
   Trash2, 
@@ -38,6 +46,8 @@ import {
   Loader2
 } from 'lucide-react';
 import { Document } from '@/types/crm';
+import { DocumentUpload } from './DocumentUpload';
+import { mockCompanies, mockContacts, mockOpportunities } from '@/lib/mock-data';
 import { toast } from 'sonner';
 
 // Mock data for documents since we don't have API yet
@@ -66,21 +76,77 @@ const mockDocuments: Document[] = [
     create_time: '2024-01-20T14:15:00Z',
     modify_time: '2024-01-20T14:15:00Z',
   },
+  {
+    id: 3,
+    name: 'Apresentação Comercial.pptx',
+    file_path: '/documents/commercial-presentation.pptx',
+    file_size: 5242880,
+    mime_type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    company_id: 2,
+    uploaded_by_user_id: 1,
+    is_public: false,
+    description: 'Apresentação comercial para clientes do setor bancário',
+    create_time: '2024-01-28T16:20:00Z',
+    modify_time: '2024-01-28T16:20:00Z',
+  },
+  {
+    id: 4,
+    name: 'Certificado AGT.pdf',
+    file_path: '/documents/agt-certificate.pdf',
+    file_size: 512000,
+    mime_type: 'application/pdf',
+    uploaded_by_user_id: 1,
+    is_public: true,
+    description: 'Certificado de software AGT para faturação',
+    create_time: '2024-01-10T09:00:00Z',
+    modify_time: '2024-01-10T09:00:00Z',
+  },
 ];
 
 export function DocumentsList() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedVisibility, setSelectedVisibility] = useState<string>('all');
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+
+  const fetchDocuments = useCallback(async () => {
+    try {
+      setLoading(true);
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      let filteredData = [...mockDocuments];
+      
+      if (searchQuery) {
+        filteredData = filteredData.filter(doc => 
+          doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          doc.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      
+      if (selectedVisibility !== 'all') {
+        const isPublic = selectedVisibility === 'public';
+        filteredData = filteredData.filter(doc => doc.is_public === isPublic);
+      }
+      
+      setDocuments(filteredData);
+    } catch (error) {
+      toast.error('Falha ao carregar documentos');
+      console.error('Error fetching documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, selectedVisibility]);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setDocuments(mockDocuments);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    fetchDocuments();
+  }, [fetchDocuments]);
 
+  const handleUploadComplete = (document: Document) => {
+    setDocuments(prev => [document, ...prev]);
+    toast.success('Documento carregado com sucesso');
+  };
   const handleDeleteDocument = async (documentId: number) => {
     if (!confirm('Tem a certeza que deseja eliminar este documento?')) {
       return;
@@ -123,11 +189,6 @@ export function DocumentsList() {
     return new Date(dateString).toLocaleString('pt-AO');
   };
 
-  const filteredDocuments = documents.filter(doc => 
-    !searchQuery || 
-    doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    doc.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="space-y-6">
@@ -143,7 +204,25 @@ export function DocumentsList() {
           />
         </div>
         
-        <Button>
+        <div className="flex gap-2">
+          <Select value={selectedVisibility} onValueChange={setSelectedVisibility}>
+            <SelectTrigger className="w-[120px]">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Visibilidade" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="public">Públicos</SelectItem>
+              <SelectItem value="private">Privados</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button onClick={() => setUploadDialogOpen(true)}>
+            <Upload className="mr-2 h-4 w-4" />
+            Carregar Documento
+          </Button>
+        </div>
+      </div>
           <Upload className="mr-2 h-4 w-4" />
           Carregar Documento
         </Button>
@@ -152,14 +231,14 @@ export function DocumentsList() {
       {/* Documents Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Documentos ({filteredDocuments.length})</CardTitle>
+          <CardTitle>Documentos ({documents.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : filteredDocuments.length === 0 ? (
+          ) : documents.length === 0 ? (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-2 text-sm font-semibold">Nenhum documento encontrado</h3>
@@ -170,7 +249,7 @@ export function DocumentsList() {
                 }
               </p>
               {!searchQuery && (
-                <Button className="mt-4">
+                <Button onClick={() => setUploadDialogOpen(true)} className="mt-4">
                   <Upload className="mr-2 h-4 w-4" />
                   Carregar Documento
                 </Button>
@@ -191,7 +270,7 @@ export function DocumentsList() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDocuments.map((document) => (
+                  {documents.map((document) => (
                     <TableRow key={document.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -275,6 +354,16 @@ export function DocumentsList() {
           )}
         </CardContent>
       </Card>
+
+      {/* Document Upload Dialog */}
+      <DocumentUpload
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        onUploadComplete={handleUploadComplete}
+        companies={mockCompanies}
+        contacts={mockContacts}
+        opportunities={mockOpportunities}
+      />
     </div>
   );
 }

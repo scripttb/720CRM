@@ -7,6 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -25,6 +32,7 @@ import {
 import { 
   Plus, 
   Search, 
+  Filter,
   MoreHorizontal, 
   Edit, 
   Trash2, 
@@ -36,8 +44,8 @@ import {
   Loader2,
   FileText
 } from 'lucide-react';
-import { api } from '@/lib/api-client';
 import { Company } from '@/types/crm';
+import { useCompanies } from '@/hooks/use-companies';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { useTranslation } from '@/lib/angola-translations';
@@ -45,41 +53,18 @@ import { CompanyDialog } from './CompanyDialog';
 
 export function CompaniesList() {
   const { t } = useTranslation();
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
 
-  const fetchCompanies = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: Record<string, string> = {};
-      if (searchQuery) {
-        params.search = searchQuery;
-      }
-      
-      const data = await api.get<Company[]>('/companies', params);
-      setCompanies(data);
-    } catch (error) {
-      toast.error(t('messages.saveError'));
-      console.error('Error fetching companies:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, t]);
-
-  useEffect(() => {
-    fetchCompanies();
-  }, [fetchCompanies]);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchCompanies();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, fetchCompanies]);
+  const {
+    companies,
+    loading,
+    searchQuery,
+    filters,
+    setSearchQuery,
+    setFilters,
+    deleteCompany
+  } = useCompanies();
 
   const handleCreateCompany = () => {
     setEditingCompany(null);
@@ -97,27 +82,13 @@ export function CompaniesList() {
     }
 
     try {
-      await api.delete(`/companies?id=${companyId}`);
-      setCompanies(companies.filter(c => c.id !== companyId));
-      toast.success(t('messages.deleteSuccess'));
+      await deleteCompany(companyId);
     } catch (error) {
-      toast.error(t('messages.deleteError'));
       console.error('Error deleting company:', error);
     }
   };
 
   const handleCompanySaved = (savedCompany: Company) => {
-    if (editingCompany) {
-      // Update existing company
-      setCompanies(companies.map(c => 
-        c.id === savedCompany.id ? savedCompany : c
-      ));
-      toast.success('Empresa actualizada com sucesso');
-    } else {
-      // Add new company
-      setCompanies([savedCompany, ...companies]);
-      toast.success('Empresa criada com sucesso');
-    }
     setDialogOpen(false);
     setEditingCompany(null);
   };
@@ -140,10 +111,41 @@ export function CompaniesList() {
           />
         </div>
         
-        <Button onClick={handleCreateCompany}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('actions.add')} {t('navigation.companies').slice(0, -1)}
-        </Button>
+        <div className="flex gap-2">
+          <Select value={filters.industry} onValueChange={(value) => setFilters(prev => ({ ...prev, industry: value }))}>
+            <SelectTrigger className="w-[150px]">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Setor" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Setores</SelectItem>
+              <SelectItem value="Petróleo e Gás">Petróleo e Gás</SelectItem>
+              <SelectItem value="Serviços Financeiros">Serviços Financeiros</SelectItem>
+              <SelectItem value="Telecomunicações">Telecomunicações</SelectItem>
+              <SelectItem value="Construção Civil">Construção Civil</SelectItem>
+              <SelectItem value="Tecnologia">Tecnologia</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={filters.size} onValueChange={(value) => setFilters(prev => ({ ...prev, size: value }))}>
+            <SelectTrigger className="w-[150px]">
+              <Filter className="mr-2 h-4 w-4" />
+              <SelectValue placeholder="Dimensão" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as Dimensões</SelectItem>
+              <SelectItem value="Microempresa">Microempresa</SelectItem>
+              <SelectItem value="Pequena Empresa">Pequena Empresa</SelectItem>
+              <SelectItem value="Média Empresa">Média Empresa</SelectItem>
+              <SelectItem value="Grande Empresa">Grande Empresa</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button onClick={handleCreateCompany}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('actions.add')} {t('navigation.companies').slice(0, -1)}
+          </Button>
+        </div>
       </div>
 
       {/* Companies Table */}

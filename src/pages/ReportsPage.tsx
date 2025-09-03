@@ -1,4 +1,9 @@
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ReportsDashboard } from '@/components/crm/reports/ReportsDashboard'
+import { InteractiveReports } from '@/components/crm/reports/InteractiveReports'
+import { BarChart3, TrendingUp } from 'lucide-react'
 
 export function ReportsPage() {
   return (
@@ -12,7 +17,26 @@ export function ReportsPage() {
         </div>
       </div>
       
-      <ReportsDashboard />
+      <Tabs defaultValue="interactive" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="interactive" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Relatórios Interativos
+          </TabsTrigger>
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Visão Geral
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="interactive">
+          <InteractiveReports />
+        </TabsContent>
+
+        <TabsContent value="overview">
+          <ReportsDashboard />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -43,64 +43,27 @@ import {
   Loader2
 } from 'lucide-react';
 import { FileText } from 'lucide-react';
-import { api } from '@/lib/api-client';
-import { Contact, Company } from '@/types/crm';
+import { Contact } from '@/types/crm';
+import { useContacts } from '@/hooks/use-contacts';
+import { useCompanies } from '@/hooks/use-companies';
 import { toast } from 'sonner';
 import { ContactDialog } from './ContactDialog';
 
 export function ContactsList() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
-  const [companies, setCompanies] = useState<Company[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCompany, setSelectedCompany] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
 
-  const fetchContacts = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: Record<string, string> = {};
-      if (searchQuery) {
-        params.search = searchQuery;
-      }
-      if (selectedCompany !== 'all') {
-        params.company_id = selectedCompany;
-      }
-      
-      const data = await api.get<Contact[]>('/contacts', params);
-      setContacts(data);
-    } catch (error) {
-      toast.error('Falha ao carregar contactos');
-      console.error('Error fetching contacts:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, selectedCompany]);
+  const {
+    contacts,
+    loading,
+    searchQuery,
+    filters,
+    setSearchQuery,
+    setFilters,
+    deleteContact
+  } = useContacts();
 
-  const fetchCompanies = useCallback(async () => {
-    try {
-      const data = await api.get<Company[]>('/companies');
-      setCompanies(data);
-    } catch (error) {
-      console.error('Error fetching companies:', error);
-    }
-  }, []);
-
-  // Fetch contacts and companies
-  useEffect(() => {
-    fetchContacts();
-    fetchCompanies();
-  }, [fetchContacts, fetchCompanies]);
-
-  // Search and filter effects
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchContacts();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, selectedCompany, fetchContacts]);
+  const { companies } = useCompanies();
 
   const handleCreateContact = () => {
     setEditingContact(null);
@@ -118,27 +81,13 @@ export function ContactsList() {
     }
 
     try {
-      await api.delete(`/contacts?id=${contactId}`);
-      setContacts(contacts.filter(c => c.id !== contactId));
-      toast.success('Contacto eliminado com sucesso');
+      await deleteContact(contactId);
     } catch (error) {
-      toast.error('Falha ao eliminar contacto');
       console.error('Error deleting contact:', error);
     }
   };
 
   const handleContactSaved = (savedContact: Contact) => {
-    if (editingContact) {
-      // Update existing contact
-      setContacts(contacts.map(c => 
-        c.id === savedContact.id ? savedContact : c
-      ));
-      toast.success('Contacto actualizado com sucesso');
-    } else {
-      // Add new contact
-      setContacts([savedContact, ...contacts]);
-      toast.success('Contacto criado com sucesso');
-    }
     setDialogOpen(false);
     setEditingContact(null);
   };
@@ -168,7 +117,7 @@ export function ContactsList() {
         </div>
         
         <div className="flex gap-2">
-          <Select value={selectedCompany} onValueChange={setSelectedCompany}>
+          <Select value={filters.company_id} onValueChange={(value) => setFilters(prev => ({ ...prev, company_id: value }))}>
             <SelectTrigger className="w-[200px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Filtrar por empresa" />
@@ -205,12 +154,12 @@ export function ContactsList() {
               <User className="mx-auto h-12 w-12 text-muted-foreground" />
               <h3 className="mt-2 text-sm font-semibold">Nenhum contacto encontrado</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {searchQuery || selectedCompany !== 'all' 
+                {searchQuery || filters.company_id !== 'all' 
                   ? 'Tente ajustar a sua pesquisa ou filtros'
                   : 'Comece por criar o seu primeiro contacto'
                 }
               </p>
-              {!searchQuery && selectedCompany === 'all' && (
+              {!searchQuery && filters.company_id === 'all' && (
                 <Button onClick={handleCreateContact} className="mt-4">
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar Contacto

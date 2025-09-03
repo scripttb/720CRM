@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { Search, Bell, Settings, LogOut, User } from 'lucide-react';
+import { NotificationCenter } from '@/components/crm/notifications/NotificationCenter';
+import { Search, Settings, LogOut, User } from 'lucide-react';
 
 interface CRMHeaderProps {
   className?: string;
@@ -50,12 +51,7 @@ export function CRMHeader({ className }: CRMHeaderProps) {
       {/* Right side actions */}
       <div className="flex items-center gap-4">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs flex items-center justify-center text-white">
-            3
-          </span>
-        </Button>
+        <NotificationCenter />
 
         {/* Theme Toggle */}
         <ThemeToggle />

@@ -40,8 +40,8 @@ import {
   TrendingUp,
   Loader2
 } from 'lucide-react';
-import { api } from '@/lib/api-client';
-import { Opportunity, PipelineStage } from '@/types/crm';
+import { Opportunity } from '@/types/crm';
+import { useOpportunities } from '@/hooks/use-opportunities';
 import { toast } from 'sonner';
 import { KwanzaCurrencyDisplay } from '@/components/angola/KwanzaCurrencyDisplay';
 import { AngolaDateDisplay } from '@/components/angola/AngolaDateTimePicker';
@@ -50,56 +50,19 @@ import { OpportunityDialog } from './OpportunityDialog';
 
 export function OpportunitiesList() {
   const { t } = useTranslation();
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
-  const [pipelineStages, setPipelineStages] = useState<PipelineStage[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingOpportunity, setEditingOpportunity] = useState<Opportunity | null>(null);
 
-  const fetchOpportunities = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: Record<string, string> = {};
-      if (searchQuery) {
-        params.search = searchQuery;
-      }
-      if (selectedStatus !== 'all') {
-        params.status = selectedStatus;
-      }
-      
-      const data = await api.get<Opportunity[]>('/opportunities', params);
-      setOpportunities(data);
-    } catch (error) {
-      toast.error(t('messages.saveError'));
-      console.error('Error fetching opportunities:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, selectedStatus, t]);
-
-  const fetchPipelineStages = useCallback(async () => {
-    try {
-      const data = await api.get<PipelineStage[]>('/pipeline-stages');
-      setPipelineStages(data);
-    } catch (error) {
-      console.error('Error fetching pipeline stages:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchOpportunities();
-    fetchPipelineStages();
-  }, [fetchOpportunities, fetchPipelineStages]);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchOpportunities();
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchQuery, selectedStatus, fetchOpportunities]);
+  const {
+    opportunities,
+    pipelineStages,
+    loading,
+    searchQuery,
+    filters,
+    setSearchQuery,
+    setFilters,
+    deleteOpportunity
+  } = useOpportunities();
 
   const handleCreateOpportunity = () => {
     setEditingOpportunity(null);
@@ -117,27 +80,13 @@ export function OpportunitiesList() {
     }
 
     try {
-      await api.delete(`/opportunities?id=${opportunityId}`);
-      setOpportunities(opportunities.filter(o => o.id !== opportunityId));
-      toast.success(t('messages.deleteSuccess'));
+      await deleteOpportunity(opportunityId);
     } catch (error) {
-      toast.error(t('messages.deleteError'));
       console.error('Error deleting opportunity:', error);
     }
   };
 
   const handleOpportunitySaved = (savedOpportunity: Opportunity) => {
-    if (editingOpportunity) {
-      // Update existing opportunity
-      setOpportunities(opportunities.map(o => 
-        o.id === savedOpportunity.id ? savedOpportunity : o
-      ));
-      toast.success('Oportunidade actualizada com sucesso');
-    } else {
-      // Add new opportunity
-      setOpportunities([savedOpportunity, ...opportunities]);
-      toast.success('Oportunidade criada com sucesso');
-    }
     setDialogOpen(false);
     setEditingOpportunity(null);
   };
@@ -176,7 +125,7 @@ export function OpportunitiesList() {
         </div>
         
         <div className="flex gap-2">
-          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+          <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
             <SelectTrigger className="w-[150px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Filtrar por estado" />
