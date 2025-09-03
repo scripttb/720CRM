@@ -220,6 +220,9 @@ export function DocumentsList() {
           <Button onClick={() => setUploadDialogOpen(true)}>
             <Upload className="mr-2 h-4 w-4" />
             Carregar Documento
+          </Button>
+        </div>
+      </div>
 
       {/* Documents Table */}
       <Card>
